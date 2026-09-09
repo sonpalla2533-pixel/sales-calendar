@@ -100,3 +100,59 @@ button{-webkit-tap-highlight-color:transparent}
 .calendar-download-row{display:flex;justify-content:center;margin-top:14px}
 .detail-export{background:#fff}
 @media(max-width:700px){.month-picker{width:300px;gap:5px;padding:9px}.month-picker button{padding:7px 3px;font-size:12px}.calendar-download-row{margin-top:6px}.calendar-download-row .btn{padding:9px 14px;font-size:12px}.modal{max-height:92dvh}.detail-export .detail-card{padding:12px 14px}.detail-export .detail-row{padding:11px 0;font-size:15px}.detail-export h2{font-size:24px;margin:5px 0 14px}}
+
+/* Final mobile/export adjustments */
+.day strong{color:#000}
+.detail-export{background:#fff;padding:0}
+@media(max-width:700px){
+  .modal-backdrop{padding:8px}
+  .modal{width:100%;max-height:calc(100dvh - 16px);overflow:hidden;border-radius:18px;padding:14px 14px 12px}
+  .close-btn{right:10px;top:10px;width:40px;height:40px;font-size:30px}
+  .modal-date{font-size:14px;padding-right:42px}
+  .modal h2{font-size:22px;margin:2px 0 10px}
+  .form-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .form-grid .full{grid-column:1/-1}
+  .form-grid label,.modal>label{font-size:12px;gap:4px}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%;border-radius:9px;padding:7px 8px;font-size:14px;min-height:36px}
+  .form-grid textarea{height:46px;resize:none}
+  .actions{gap:7px;margin-top:10px;display:flex;flex-wrap:wrap}
+  .actions .btn{padding:8px 12px;font-size:13px}
+  .detail-export{padding:0}
+  .detail-export .detail-card{padding:10px 12px}
+  .detail-export .detail-row{grid-template-columns:100px 1fr;padding:8px 0;font-size:14px}
+  .detail-export h2{font-size:21px;margin:3px 0 10px}
+  .calendar-download-row .btn{font-size:12px;padding:8px 12px}
+}
+@media(max-width:380px){
+  .modal{padding:12px 10px 10px}
+  .form-grid{gap:6px}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{padding:6px 7px;font-size:13px;min-height:34px}
+  .form-grid textarea{height:42px}
+  .modal h2{font-size:20px;margin-bottom:7px}
+  .actions .btn{padding:7px 9px;font-size:12px}
+}
+
+
+/* Mobile booking form: equal columns, compact layout, and no iOS input zoom */
+.form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;align-items:start}
+.form-grid label{min-width:0;width:100%}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;min-width:0}
+
+@media(max-width:700px){
+  .modal{overflow:hidden}
+  .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px}
+  .form-grid label{min-width:0}
+  /* iOS Safari normally zooms focused inputs below 16px. */
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{font-size:16px;line-height:1.2;min-height:38px;padding:7px 8px}
+  .form-grid input[type="date"]{font-size:16px;width:100%;display:block}
+  .form-grid textarea{height:44px}
+}
+@media(max-width:380px){
+  .form-grid{gap:6px}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{font-size:16px;min-height:36px;padding:6px 7px}
+  .form-grid textarea{height:42px}
+}
+
+/* Give exported images a clean breathing margin without changing the live page. */
+[data-calendar-export]{background:#fff}
+.detail-export{background:#fff}

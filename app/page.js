@@ -81,7 +81,9 @@ export default function Home() {
   async function downloadCalendar() {
     if (!calendarRef.current) return;
     const canvas = await html2canvas(calendarRef.current, {
-      backgroundColor: "#ffffff", scale: 2, useCORS: true,
+      backgroundColor: "#ffffff",
+      scale: Math.min(2, window.devicePixelRatio || 1.5),
+      useCORS: true,
       onclone: (doc) => {
         const root = doc.querySelector("[data-calendar-export]");
         if (!root) return;
@@ -94,13 +96,35 @@ export default function Home() {
           today.style.height = "auto";
           today.style.display = "block";
         }
+        root.querySelectorAll(".day strong").forEach(el => el.style.color = "#000");
         const title = root.querySelector(".brand h1");
         if (title) title.style.visibility = "hidden";
+        root.style.padding = "10px";
+        root.style.boxSizing = "border-box";
+        root.style.background = "#fff";
       }
     });
+    const fileName = `ปฏิทิน-${thaiMonths[viewDate.getMonth()]}-${viewDate.getFullYear()+543}.png`;
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) return;
+    const file = new File([blob], fileName, { type: "image/png" });
+    // iPhone/iPad: use the native share sheet so the user can choose
+    // “บันทึกภาพ / Save Image” and put the PNG directly in Photos.
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try {
+        await navigator.share({ files: [file], title: "บันทึกปฏิทิน" });
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+      }
+    }
     const link = document.createElement("a");
-    link.download = `ปฏิทิน-${thaiMonths[viewDate.getMonth()]}-${viewDate.getFullYear()+543}.png`;
-    link.href = canvas.toDataURL("image/png"); link.click();
+    link.download = fileName;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   }
 
   return (
