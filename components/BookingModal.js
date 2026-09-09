@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import html2canvas from "html2canvas";
 import { supabase } from "../lib/supabase";
 
 const STATUS = {
@@ -23,6 +24,7 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
   const [moveDate, setMoveDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const detailRef = useRef(null);
 
   useEffect(() => {
     setMode(booking ? "view" : "form");
@@ -93,23 +95,31 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
 
         {mode === "view" ? (
           <>
-            <div className="modal-date">{thaiDate(booking.booking_date)}</div>
-            <h2>รายละเอียดการจอง</h2>
-            <div className="detail-card">
-              <div className="detail-top">
-                <span className={`big-status status-${booking.status}`}>{STATUS[booking.status]}</span>
-                <b>{booking.booking_code}</b>
-              </div>
+            <div ref={detailRef} className="detail-export">
+              <div className="modal-date">{thaiDate(booking.booking_date)}</div>
+              <h2>รายละเอียดการจอง</h2>
+              <div className="detail-card">
+                <div className="detail-top">
+                  <span className={`big-status status-${booking.status}`}>{STATUS[booking.status]}</span>
+                </div>
               <Row label="ชื่อ" value={booking.customer_name}/>
               <Row label="เบอร์โทร" value={booking.phone || "-"}/>
               <Row label="รายการอาหาร" value={booking.food || "-"}/>
               <Row label="ผู้เข้าพัก" value={`ผู้ใหญ่ ${booking.adults} คน, เด็ก ${booking.children} คน`}/>
               <Row label="มัดจำ" value={`${Number(booking.deposit||0).toLocaleString()} บาท`}/>
               <Row label="คงเหลือ" value={`${Number(booking.remaining||0).toLocaleString()} บาท`}/>
-              <Row label="หมายเหตุ" value={booking.note || "-"}/>
+                <Row label="หมายเหตุ" value={booking.note || "-"}/>
+              </div>
             </div>
             {message && <div className="error">{message}</div>}
             <div className="actions">
+              <button className="btn secondary export-hide" onClick={async () => {
+                if (!detailRef.current) return;
+                const canvas = await html2canvas(detailRef.current, { backgroundColor: "#fff", scale: 2, useCORS: true });
+                const link = document.createElement("a");
+                link.download = `รายละเอียดการจอง-${booking.customer_name || "ลูกค้า"}.png`;
+                link.href = canvas.toDataURL("image/png"); link.click();
+              }}>ดาวน์โหลดรูปภาพรายละเอียด</button>
               <button className="btn secondary" onClick={() => setMode("form")}>แก้ไข</button>
               <button className="btn secondary" onClick={() => setMode("move")}>ย้ายวัน</button>
               {booking.status !== "cancelled" && <button className="btn danger" onClick={cancelBooking}>ยกเลิก</button>}
@@ -117,7 +127,7 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
           </>
         ) : mode === "move" ? (
           <>
-            <div className="modal-date">ย้ายการจอง {booking.booking_code}</div>
+            <div className="modal-date">ย้ายการจอง</div>
             <h2>ย้ายวันจอง</h2>
             <p className="muted">จากวันที่ <b>{thaiDate(booking.booking_date)}</b></p>
             <label>เป็นวันที่</label>

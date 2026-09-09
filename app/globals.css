@@ -92,3 +92,11 @@ button{-webkit-tap-highlight-color:transparent}
   .calendar-grid{gap:4px}.day{border-radius:12px}.day strong{font-size:18px}
   .day.today strong{width:35px;height:35px}
 }
+
+.month-picker-wrap{position:relative;display:flex;justify-content:center}
+.month-picker{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:30;width:min(360px,90vw);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;background:#fff;border:1px solid #e1e2e5;border-radius:16px;box-shadow:0 15px 40px #0002}
+.month-picker button{border:0;background:#f4f5f7;border-radius:10px;padding:10px 6px;color:#25272b;cursor:pointer}
+.month-picker button.selected{background:#e8f8ef;color:#1fa765;font-weight:800}
+.calendar-download-row{display:flex;justify-content:center;margin-top:14px}
+.detail-export{background:#fff}
+@media(max-width:700px){.month-picker{width:300px;gap:5px;padding:9px}.month-picker button{padding:7px 3px;font-size:12px}.calendar-download-row{margin-top:6px}.calendar-download-row .btn{padding:9px 14px;font-size:12px}.modal{max-height:92dvh}.detail-export .detail-card{padding:12px 14px}.detail-export .detail-row{padding:11px 0;font-size:15px}.detail-export h2{font-size:24px;margin:5px 0 14px}}
