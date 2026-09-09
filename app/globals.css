@@ -17,7 +17,7 @@ button{-webkit-tap-highlight-color:transparent}
 .calendar-section{padding:28px 30px 36px}
 .month-row{display:grid;grid-template-columns:76px 1fr 76px;align-items:center;gap:20px}
 .circle-btn{width:76px;height:76px;border:0;border-radius:50%;background:#f2f3f5;font-size:50px;line-height:1;color:#26282c;cursor:pointer}
-.month-title{background:none;border:0;font-size:34px;font-weight:700;cursor:pointer;color:#2f67c7;letter-spacing:-.4px}
+.month-title{background:none;border:0;font-size:34px;font-weight:700;cursor:pointer;color:#000;letter-spacing:-.4px}
 .chev{font-size:30px;margin-left:4px}
 
 .week-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #e4e5e8;padding:0 0 14px;margin-top:20px;font-size:18px;font-weight:800;text-align:center;color:#303238}
