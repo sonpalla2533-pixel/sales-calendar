@@ -46,14 +46,16 @@ button{-webkit-tap-highlight-color:transparent}
 .detail-row{display:grid;grid-template-columns:180px 1fr;gap:20px;padding:17px 0;border-bottom:1px solid #e6e7e9;font-size:20px}
 .detail-row:last-child{border-bottom:0}
 .detail-row span{color:#777;font-weight:700}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.form-grid label,.modal>label{font-weight:700;color:#666;display:flex;flex-direction:column;gap:7px}
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;width:100%;align-items:start}
+.form-grid label,.modal>label{font-weight:700;color:#666;display:flex;flex-direction:column;gap:7px;width:100%;min-width:0}
 .form-grid .full{grid-column:1/-1}
-.form-grid input,.form-grid select,.form-grid textarea,.modal>input{border:1px solid #d9dade;border-radius:12px;padding:13px;background:#fff;color:#222}
+.form-grid input,.form-grid select,.form-grid textarea,.modal>input{border:1px solid #d9dade;border-radius:12px;padding:13px;background:#fff;color:#222;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box;margin:0}
 .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;flex-wrap:wrap}
 .btn{border:0;border-radius:13px;padding:13px 22px;font-weight:800;cursor:pointer}
 .btn.primary{background:#1fa765;color:#fff}.btn.secondary{background:#eef0f2}.btn.danger{background:#ffe7eb;color:#d51545}
 .muted{color:#777}.modal input[type=date]{height:50px;margin:8px 0 15px}
+.form-grid input[type="date"]{margin:0!important}
 
 .receipt-export{position:fixed;left:-10000px;top:0;width:390px;background:#fafafa;color:#222;font-family:"Noto Sans Thai",Tahoma,Arial,sans-serif;box-shadow:0 8px 30px #00000012;overflow:hidden}
 .receipt-inner{padding:34px 28px 28px;background:#fafafa}
@@ -100,8 +102,20 @@ button{-webkit-tap-highlight-color:transparent}
   .error{font-size:11px;margin:5px 0;padding:7px}
 
   .modal{max-height:90dvh;padding:24px 18px}
-  .form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}
+  .form-grid{grid-template-columns:1fr 1fr;gap:7px;width:100%}
+  .form-grid .full{grid-column:1/-1}
+  .form-grid label,.modal>label{font-size:12px;gap:4px;width:100%;min-width:0}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;border-radius:9px;padding:7px 8px;font-size:16px;line-height:1.2;min-height:38px;box-sizing:border-box}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:38px;min-height:38px;margin:0!important;padding:7px 8px;appearance:none;-webkit-appearance:none}
+  .form-grid textarea{height:44px}
   .detail-row{grid-template-columns:120px 1fr;font-size:16px}.modal h2{font-size:27px}
+  .actions{gap:7px;margin-top:10px;display:flex;flex-wrap:wrap}
+  .actions .btn{padding:8px 12px;font-size:13px}
+  .detail-export{padding:0}
+  .detail-export .detail-card{padding:10px 12px}
+  .detail-export .detail-row{grid-template-columns:100px 1fr;padding:8px 0;font-size:14px}
+  .detail-export h2{font-size:21px;margin:3px 0 10px}
+  .calendar-download-row .btn{font-size:12px;padding:8px 12px}
 }
 
 @media(max-width:380px){
@@ -111,6 +125,13 @@ button{-webkit-tap-highlight-color:transparent}
   .circle-btn{width:44px;height:44px}
   .calendar-grid{gap:4px}.day{border-radius:12px}.day strong{font-size:18px}
   .day.today strong{width:35px;height:35px}
+  .modal{padding:12px 10px 10px}
+  .form-grid{gap:6px}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;padding:6px 7px;font-size:16px;min-height:36px}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:36px;min-height:36px;margin:0!important}
+  .form-grid textarea{height:42px}
+  .modal h2{font-size:20px;margin-bottom:7px}
+  .actions .btn{padding:7px 9px;font-size:12px}
 }
 
 .month-picker-wrap{position:relative;display:flex;justify-content:center}
@@ -129,11 +150,12 @@ button{-webkit-tap-highlight-color:transparent}
   .close-btn{right:10px;top:10px;width:40px;height:40px;font-size:30px}
   .modal-date{font-size:14px;padding-right:42px}
   .modal h2{font-size:22px;margin:2px 0 10px}
-  .form-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;width:100%}
   .form-grid .full{grid-column:1/-1}
-  .form-grid label,.modal>label{font-size:12px;gap:4px}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%;border-radius:9px;padding:7px 8px;font-size:14px;min-height:36px}
-  .form-grid textarea{height:46px;resize:none}
+  .form-grid label,.modal>label{font-size:12px;gap:4px;width:100%;min-width:0}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;border-radius:9px;padding:7px 8px;font-size:16px;line-height:1.2;min-height:38px;box-sizing:border-box}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:38px;min-height:38px;margin:0!important;appearance:none;-webkit-appearance:none}
+  .form-grid textarea{height:44px}
   .actions{gap:7px;margin-top:10px;display:flex;flex-wrap:wrap}
   .actions .btn{padding:8px 12px;font-size:13px}
   .detail-export{padding:0}
@@ -144,8 +166,9 @@ button{-webkit-tap-highlight-color:transparent}
 }
 @media(max-width:380px){
   .modal{padding:12px 10px 10px}
-  .form-grid{gap:6px}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{padding:6px 7px;font-size:13px;min-height:34px}
+  .form-grid{gap:6px;width:100%}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;padding:6px 7px;font-size:16px;min-height:36px}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:36px;min-height:36px;margin:0!important}
   .form-grid textarea{height:42px}
   .modal h2{font-size:20px;margin-bottom:7px}
   .actions .btn{padding:7px 9px;font-size:12px}
@@ -153,19 +176,21 @@ button{-webkit-tap-highlight-color:transparent}
 
 .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;align-items:start}
 .form-grid label{min-width:0;width:100%}
-.form-grid input,.form-grid select,.form-grid textarea{width:100%;min-width:0}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;min-width:0;max-width:100%}
+.form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important}
 
 @media(max-width:700px){
   .modal{overflow:hidden}
-  .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px}
-  .form-grid label{min-width:0}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{font-size:16px;line-height:1.2;min-height:38px;padding:7px 8px}
-  .form-grid input[type="date"]{font-size:16px;width:100%;display:block}
+  .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;width:100%}
+  .form-grid label{min-width:0;width:100%}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;font-size:16px;line-height:1.2;min-height:38px;padding:7px 8px;box-sizing:border-box}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:38px;min-height:38px;margin:0!important;appearance:none;-webkit-appearance:none}
   .form-grid textarea{height:44px}
 }
 @media(max-width:380px){
-  .form-grid{gap:6px}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{font-size:16px;min-height:36px;padding:6px 7px}
+  .form-grid{gap:6px;width:100%}
+  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{width:100%!important;min-width:0!important;max-width:100%!important;font-size:16px;min-height:36px;padding:6px 7px}
+  .form-grid input[type="date"]{width:100%!important;min-width:0!important;max-width:100%!important;height:36px;min-height:36px;margin:0!important}
   .form-grid textarea{height:42px}
 }
 
