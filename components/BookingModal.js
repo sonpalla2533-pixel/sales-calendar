@@ -1,240 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import html2canvas from "html2canvas";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const STATUS = {
-  booked: "จองแล้ว",
-  waiting_payment: "รอชำระเงิน",
-  maintenance: "ปิดปรับปรุง",
-  cancelled: "ยกเลิก"
-};
+const ROOM_PRICE=1900;
+const HOUSE_PRICE=3900;
+const STATUS={booked:"จองแล้ว",waiting_payment:"รอชำระเงิน",maintenance:"ปิดปรับปรุง",cancelled:"ยกเลิก"};
+const money=n=>Number(n||0).toLocaleString();
+function thaiDate(key){if(!key)return "";const d=new Date(key+"T00:00:00");return `${d.getDate()} ${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][d.getMonth()]} ${d.getFullYear()+543}`}
+function daysBetween(a,b){if(!a||!b)return 1;const x=new Date(a+"T00:00:00"),y=new Date(b+"T00:00:00");return Math.max(1,Math.round((y-x)/86400000))}
+function receiptCode(code){return code?String(code).replace(/^KSV[-\s]*/i,""):"-"}
 
-function thaiDate(key) {
-  if (!key) return "";
-  const d = new Date(key + "T00:00:00");
-  return `${d.getDate()} ${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][d.getMonth()]} ${d.getFullYear()+543}`;
+export default function BookingModal({date,booking,onClose,onSaved}){
+ const open=!!date||!!booking; const [mode,setMode]=useState(booking?"view":"form"); const [saving,setSaving]=useState(false); const [message,setMessage]=useState(""); const [foodOpen,setFoodOpen]=useState(false); const [extraOpen,setExtraOpen]=useState(false); const [foodDraft,setFoodDraft]=useState({name:"",price:""}); const [extraDraft,setExtraDraft]=useState({name:"",price:""}); const [form,setForm]=useState({}); const [moveDate,setMoveDate]=useState("");
+ useEffect(()=>{setMode(booking?"view":"form");setMessage("");setFoodOpen(false);setExtraOpen(false);setFoodDraft({name:"",price:""});setExtraDraft({name:"",price:""});
+  if(booking){setForm({check_in:booking.check_in||booking.booking_date,check_out:booking.check_out||booking.booking_date,customer_name:booking.customer_name||"",phone:booking.phone||"",booking_type:booking.booking_type||"room",adults:booking.adults??1,children:booking.children??0,deposit:booking.deposit??0,status:booking.status||"booked",food_items:Array.isArray(booking.food_items)?booking.food_items:[],extra_items:Array.isArray(booking.extra_items)?booking.extra_items:[],note:booking.note||""});setMoveDate(booking.check_in||booking.booking_date)}
+  else setForm({check_in:date,check_out:date,customer_name:"",phone:"",booking_type:"room",adults:1,children:0,deposit:0,status:"booked",food_items:[],extra_items:[],note:""});
+ },[booking,date]);
+ if(!open)return null;
+ const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+ const nights=useMemo(()=>daysBetween(form.check_in,form.check_out),[form.check_in,form.check_out]);
+ const accommodation=(form.booking_type==="house"?HOUSE_PRICE:ROOM_PRICE)*nights;
+ const foodTotal=(form.food_items||[]).reduce((s,x)=>s+Number(x.price||0),0);
+ const extraTotal=(form.extra_items||[]).reduce((s,x)=>s+Number(x.price||0),0);
+ const total=accommodation+foodTotal+extraTotal; const remaining=Math.max(0,total-Number(form.deposit||0));
+ function addFood(){if(!foodDraft.name||!Number(foodDraft.price))return;set("food_items",[...(form.food_items||[]),{name:foodDraft.name,price:Number(foodDraft.price)}]);setFoodDraft({name:"",price:""})}
+ function addExtra(){if(!extraDraft.name||!Number(extraDraft.price))return;set("extra_items",[...(form.extra_items||[]),{name:extraDraft.name,price:Number(extraDraft.price)}]);setExtraDraft({name:"",price:""})}
+ function removeItem(k,i){set(k,(form[k]||[]).filter((_,idx)=>idx!==i))}
+ async function save(){setSaving(true);setMessage("");if(!form.check_in||!form.check_out||form.check_out<=form.check_in){setMessage("กรุณาเลือกวันเช็คเอาท์ให้หลังวันเช็คอิน");setSaving(false);return}if(!form.customer_name){setMessage("กรุณากรอกชื่อผู้จอง");setSaving(false);return}
+  const payload={booking_date:form.check_in,check_in:form.check_in,check_out:form.check_out,customer_name:form.customer_name,phone:form.phone,booking_type:form.booking_type,accommodation_price:form.booking_type==="house"?HOUSE_PRICE:ROOM_PRICE,food_items:form.food_items||[],extra_items:form.extra_items||[],food:(form.food_items||[]).length?form.food_items.map(x=>`${x.name} ${money(x.price)}`).join(", "):"ไม่ได้สั่งเพิ่ม",adults:Number(form.adults||0),children:Number(form.children||0),note:form.note,status:form.status,deposit:Number(form.deposit||0),remaining,total};
+  const result=booking?await supabase.from("bookings").update(payload).eq("id",booking.id):await supabase.from("bookings").insert(payload);if(result.error)setMessage(result.error.message);else onSaved();setSaving(false)}
+ async function moveBooking(){if(!moveDate)return;setSaving(true);const {error}=await supabase.from("bookings").update({booking_date:moveDate,check_in:moveDate}).eq("id",booking.id);if(error)setMessage(error.message);else onSaved();setSaving(false)}
+ async function cancelBooking(){if(!confirm("ยืนยันยกเลิกการจองนี้หรือไม่?"))return;setSaving(true);const {error}=await supabase.from("bookings").update({status:"cancelled"}).eq("id",booking.id);if(error)setMessage(error.message);else onSaved();setSaving(false)}
+ async function downloadReceipt(){if(!booking)return;const el=document.createElement("div");el.style.cssText="position:fixed;left:-10000px;top:0;width:390px;background:#fff;padding:28px;font-family:Arial,sans-serif;color:#222";const foods=Array.isArray(booking.food_items)?booking.food_items:[];const extras=Array.isArray(booking.extra_items)?booking.extra_items:[];const accom=Number(booking.accommodation_price||ROOM_PRICE)*daysBetween(booking.check_in||booking.booking_date,booking.check_out||booking.booking_date);const food=foods.reduce((s,x)=>s+Number(x.price||0),0);const extra=extras.reduce((s,x)=>s+Number(x.price||0),0);const grand=Number(booking.total||accom+food+extra);el.innerHTML=`<div style="text-align:center;font-size:28px;font-weight:800">รายละเอียดการจอง</div><hr/><p>เลขที่การจอง: <b>${receiptCode(booking.booking_code)}</b></p><p>เช็คอิน: <b>${thaiDate(booking.check_in||booking.booking_date)}</b></p><p>เช็คเอาท์: <b>${thaiDate(booking.check_out||booking.booking_date)}</b></p><p>สถานะ: <b>${STATUS[booking.status]||"-"}</b></p><hr/><p>ชื่อลูกค้า: <b>${booking.customer_name||"-"}</b></p><p>เบอร์โทรศัพท์: <b>${booking.phone||"-"}</b></p><p>ประเภท: <b>${booking.booking_type==="house"?"เหมาหลัง":"1 ห้อง"}</b></p><p>ผู้ใหญ่: <b>${booking.adults||0} คน</b>　เด็ก: <b>${booking.children||0} คน</b></p><hr/><p style="font-weight:800">ค่าที่พัก ${money(accom)} บาท</p>${foods.map(x=>`<p>${x.name} ${money(x.price)} บาท</p>`).join("")}${extras.map(x=>`<p>${x.name} ${money(x.price)} บาท</p>`).join("")}<hr/><p>เงินมัดจำ: <b>${money(booking.deposit)} บาท</b></p><p>ยอดคงเหลือ: <b>${money(booking.remaining)} บาท</b></p><p style="font-size:20px">รวมทั้งหมด: <b>${money(grand)} บาท</b></p><hr/><p>หมายเหตุ: ${booking.note||"-"}</p><p style="text-align:center;font-weight:800">ขอบคุณที่ใช้บริการ</p><div style="background:#f1f3f5;padding:9px;text-align:center">📶 WiFi aisfibre5G_Khonsan Village<br/>Password: <b>Ksv090868</b></div>`;document.body.appendChild(el);const {default:html2canvas}=await import("html2canvas");const canvas=await html2canvas(el,{backgroundColor:"#fff",scale:2});el.remove();const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));if(!blob)return;const file=new File([blob],`รายละเอียดการจอง-${booking.customer_name||"ลูกค้า"}.png`,{type:"image/png"});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({files:[file],title:"รายละเอียดการจอง"});return}catch(e){if(e?.name==="AbortError")return}}const a=document.createElement("a");a.download=file.name;a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+ const detailFoods=Array.isArray(booking?.food_items)?booking.food_items:[]; const detailExtras=Array.isArray(booking?.extra_items)?booking.extra_items:[];
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><div className="modal"><button className="close-btn" onClick={onClose}>×</button>
+ {mode==="view"?<><div className="modal-date">{thaiDate(booking.check_in||booking.booking_date)} - {thaiDate(booking.check_out||booking.booking_date)}</div><h2>รายละเอียดการจอง</h2><div className="detail-card"><div className="detail-top"><span className={`big-status status-${booking.status}`}>{STATUS[booking.status]}</span></div><Row label="เช็คอิน" value={thaiDate(booking.check_in||booking.booking_date)}/><Row label="เช็คเอาท์" value={thaiDate(booking.check_out||booking.booking_date)}/><Row label="ชื่อ" value={booking.customer_name}/><Row label="เบอร์โทร" value={booking.phone||"-"}/><Row label="ประเภท" value={booking.booking_type==="house"?"เหมาหลัง":"1 ห้อง"}/><Row label="ผู้เข้าพัก" value={`ผู้ใหญ่ ${booking.adults||0} คน, เด็ก ${booking.children||0} คน`}/><Row label="ค่าที่พัก" value={`${money(Number(booking.accommodation_price||ROOM_PRICE)*daysBetween(booking.check_in||booking.booking_date,booking.check_out||booking.booking_date))} บาท`}/>{detailFoods.map((x,i)=><Row key={`f${i}`} label={x.name} value={`${money(x.price)} บาท`}/>)}{detailExtras.map((x,i)=><Row key={`e${i}`} label={x.name} value={`${money(x.price)} บาท`}/>)}<Row label="มัดจำ" value={`${money(booking.deposit)} บาท`}/><Row label="คงเหลือ" value={`${money(booking.remaining)} บาท`}/><Row label="รวมทั้งหมด" value={`${money(booking.total||Number(booking.deposit||0)+Number(booking.remaining||0))} บาท`}/><Row label="หมายเหตุ" value={booking.note||"-"}/></div>{message&&<div className="error">{message}</div>}<div className="actions"><button className="btn secondary" onClick={downloadReceipt}>ดาวน์โหลดรูปภาพรายละเอียด</button><button className="btn secondary" onClick={()=>setMode("form")}>แก้ไข</button><button className="btn secondary" onClick={()=>setMode("move")}>ย้ายวัน</button>{booking.status!=="cancelled"&&<button className="btn danger" onClick={cancelBooking}>ยกเลิก</button>}</div></>
+ :mode==="move"?<><div className="modal-date">ย้ายการจอง</div><h2>ย้ายวันจอง</h2><p className="muted">จากวันที่ <b>{thaiDate(booking.check_in||booking.booking_date)}</b></p><label>เป็นวันที่<input type="date" value={moveDate} onChange={e=>setMoveDate(e.target.value)}/></label>{message&&<div className="error">{message}</div>}<div className="actions"><button className="btn secondary" onClick={()=>setMode("view")}>กลับ</button><button className="btn primary" disabled={saving} onClick={moveBooking}>{saving?"กำลังบันทึก…":"ยืนยันย้ายวัน"}</button></div></>
+ :<><div className="modal-date">{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</div><h2>{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</h2><div className="form-grid">
+ <label>วันเช็คอิน<input type="date" value={form.check_in||""} onChange={e=>set("check_in",e.target.value)}/></label><label>วันเช็คเอาท์<input type="date" value={form.check_out||""} onChange={e=>set("check_out",e.target.value)}/></label>
+ <label>ชื่อผู้จอง<input value={form.customer_name||""} onChange={e=>set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label><label>เบอร์โทรศัพท์<input value={form.phone||""} onChange={e=>set("phone",e.target.value)} placeholder="เบอร์โทร"/></label>
+ <div style={{gridColumn:"1/-1",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><label>ประเภทการจอง<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{[["room","1 ห้อง",ROOM_PRICE],["house","เหมาหลัง",HOUSE_PRICE]].map(([v,n,p])=><button type="button" key={v} onClick={()=>set("booking_type",v)} style={{padding:"10px 8px",borderRadius:10,border:form.booking_type===v?"2px solid #1fa765":"1px solid #d9dade",background:form.booking_type===v?"#e8f8ef":"#fff",fontWeight:800,textAlign:"left"}}>{n}<br/><span style={{fontSize:12,color:"#666"}}>{money(p)} บาท/คืน</span></button>)}</div></label><div><label>ผู้เข้าพัก</label><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><label>ผู้ใหญ่<input type="number" min="0" value={form.adults??0} onChange={e=>set("adults",e.target.value)}/></label><label>เด็ก<input type="number" min="0" value={form.children??0} onChange={e=>set("children",e.target.value)}/></label></div></div></div>
+ <div style={{gridColumn:"1/-1",borderTop:"1px solid #eee",paddingTop:8}}><button type="button" className="btn secondary" onClick={()=>setFoodOpen(v=>!v)}>+ เพิ่มอาหาร</button>{foodOpen&&<div style={{display:"grid",gridTemplateColumns:"1fr 120px auto",gap:6,marginTop:8}}><input placeholder="ชื่ออาหาร" value={foodDraft.name} onChange={e=>setFoodDraft({...foodDraft,name:e.target.value})}/><input type="number" placeholder="ราคา" value={foodDraft.price} onChange={e=>setFoodDraft({...foodDraft,price:e.target.value})}/><button type="button" className="btn primary" onClick={addFood}>เพิ่ม</button></div>}{(form.food_items||[]).map((x,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0"}}><span>{x.name}</span><span>{money(x.price)} บาท <button type="button" onClick={()=>removeItem("food_items",i)}>×</button></span></div>)}</div>
+ <div style={{gridColumn:"1/-1"}}><button type="button" className="btn secondary" onClick={()=>setExtraOpen(v=>!v)}>+ เพิ่มหมายเหตุ/ค่าใช้จ่าย</button>{extraOpen&&<div style={{display:"grid",gridTemplateColumns:"1fr 120px auto",gap:6,marginTop:8}}><input placeholder="เช่น เตียงเสริม" value={extraDraft.name} onChange={e=>setExtraDraft({...extraDraft,name:e.target.value})}/><input type="number" placeholder="ราคา" value={extraDraft.price} onChange={e=>setExtraDraft({...extraDraft,price:e.target.value})}/><button type="button" className="btn primary" onClick={addExtra}>เพิ่ม</button></div>}{(form.extra_items||[]).map((x,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0"}}><span>{x.name}</span><span>{money(x.price)} บาท <button type="button" onClick={()=>removeItem("extra_items",i)}>×</button></span></div>)}</div>
+ <label className="full">หมายเหตุเพิ่มเติม<textarea rows="2" value={form.note||""} onChange={e=>set("note",e.target.value)} placeholder="ข้อความเพิ่มเติม (ไม่คิดราคา)"/></label>
+ <div style={{gridColumn:"1/-1",background:"#f6f8f7",borderRadius:12,padding:10}}><div>ค่าที่พัก {money(accommodation)} บาท ({nights} คืน)</div><div>ค่าอาหาร {money(foodTotal)} บาท</div><div>ค่าใช้จ่ายเพิ่ม {money(extraTotal)} บาท</div><div style={{fontWeight:800,fontSize:18}}>รวมทั้งหมด {money(total)} บาท</div></div>
+ <label>เงินมัดจำ (บาท)<input type="number" min="0" value={form.deposit??0} onChange={e=>set("deposit",e.target.value)}/></label><label>คงเหลือ (บาท)<input value={money(remaining)} readOnly/></label><label className="full">สถานะ<select value={form.status||"booked"} onChange={e=>set("status",e.target.value)}><option value="booked">จองแล้ว</option><option value="waiting_payment">รอชำระเงิน</option><option value="maintenance">ปิดปรับปรุง</option></select></label>
+ </div>{message&&<div className="error">{message}</div>}<div className="actions"><button className="btn secondary" onClick={()=>booking?setMode("view"):onClose()}>ยกเลิก</button><button className="btn primary" disabled={saving} onClick={save}>{saving?"กำลังบันทึก…":"บันทึกการจอง"}</button></div></>}
+ </div></div>
 }
-
-function receiptDate(key) {
-  if (!key) return "-";
-  const d = new Date(key + "T00:00:00");
-  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()+543}`;
-}
-
-function receiptCode(code) {
-  if (!code) return "-";
-  return String(code).replace(/^KSV[-\s]*/i, "");
-}
-
-export default function BookingModal({ date, booking, onClose, onSaved }) {
-  const open = !!date || !!booking;
-  const [mode, setMode] = useState(booking ? "view" : "form");
-  const [form, setForm] = useState({});
-  const [moveDate, setMoveDate] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const detailRef = useRef(null);
-  const receiptRef = useRef(null);
-
-  useEffect(() => {
-    setMode(booking ? "view" : "form");
-    setMessage("");
-    setForm(booking || {
-      booking_date: date,
-      customer_name: "",
-      phone: "",
-      food: "ไม่ได้สั่งเพิ่ม",
-      adults: 1,
-      children: 0,
-      note: "",
-      status: "booked",
-      deposit: 0,
-      remaining: 0
-    });
-    setMoveDate(booking?.booking_date || "");
-  }, [booking, date]);
-
-  if (!open) return null;
-
-  async function save() {
-    setSaving(true); setMessage("");
-    const payload = {
-      booking_date: form.booking_date,
-      customer_name: form.customer_name,
-      phone: form.phone,
-      food: form.food,
-      adults: Number(form.adults || 0),
-      children: Number(form.children || 0),
-      note: form.note,
-      status: form.status,
-      deposit: Number(form.deposit || 0),
-      remaining: Number(form.remaining || 0)
-    };
-    const result = booking
-      ? await supabase.from("bookings").update(payload).eq("id", booking.id)
-      : await supabase.from("bookings").insert(payload);
-    if (result.error) setMessage(result.error.message);
-    else onSaved();
-    setSaving(false);
-  }
-
-  async function moveBooking() {
-    if (!moveDate) return;
-    setSaving(true); setMessage("");
-    const { error } = await supabase.from("bookings").update({ booking_date: moveDate }).eq("id", booking.id);
-    if (error) setMessage(error.message);
-    else onSaved();
-    setSaving(false);
-  }
-
-  async function cancelBooking() {
-    if (!confirm("ยืนยันยกเลิกการจองนี้หรือไม่?")) return;
-    setSaving(true);
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
-    if (error) setMessage(error.message);
-    else onSaved();
-    setSaving(false);
-  }
-
-  async function downloadReceipt() {
-    if (!receiptRef.current || !booking) return;
-    const canvas = await html2canvas(receiptRef.current, {
-      backgroundColor: "#fff",
-      scale: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
-      useCORS: true
-    });
-    const fileName = `รายละเอียดการจอง-${booking.customer_name || "ลูกค้า"}.png`;
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-    if (!blob) return;
-    const file = new File([blob], fileName, { type: "image/png" });
-
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      try {
-        await navigator.share({ files: [file], title: "รายละเอียดการจอง" });
-        return;
-      } catch (err) {
-        if (err?.name === "AbortError") return;
-      }
-    }
-
-    const link = document.createElement("a");
-    link.download = fileName;
-    link.href = URL.createObjectURL(blob);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  }
-
-  const set = (k,v) => setForm(f => ({...f,[k]:v}));
-  const total = Number(booking?.deposit || 0) + Number(booking?.remaining || 0);
-
-  return (
-    <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <button className="close-btn" onClick={onClose}>×</button>
-
-        {mode === "view" ? (
-          <>
-            <div ref={detailRef} className="detail-export">
-              <div className="modal-date">{thaiDate(booking.booking_date)}</div>
-              <h2>รายละเอียดการจอง</h2>
-              <div className="detail-card">
-                <div className="detail-top">
-                  <span className={`big-status status-${booking.status}`}>{STATUS[booking.status]}</span>
-                </div>
-                <Row label="ชื่อ" value={booking.customer_name}/>
-                <Row label="เบอร์โทร" value={booking.phone || "-"}/>
-                <Row label="รายการอาหาร" value={booking.food || "-"}/>
-                <Row label="ผู้เข้าพัก" value={`ผู้ใหญ่ ${booking.adults} คน, เด็ก ${booking.children} คน`}/>
-                <Row label="มัดจำ" value={`${Number(booking.deposit||0).toLocaleString()} บาท`}/>
-                <Row label="คงเหลือ" value={`${Number(booking.remaining||0).toLocaleString()} บาท`}/>
-                <Row label="หมายเหตุ" value={booking.note || "-"}/>
-              </div>
-            </div>
-
-            <div ref={receiptRef} className="receipt-export" aria-hidden="true">
-              <div className="receipt-perforation top"></div>
-              <div className="receipt-inner">
-                <div className="receipt-title-th">รายละเอียดการจอง</div>
-                <div className="receipt-line">------------------------------------------</div>
-                <div className="receipt-row"><span>เลขที่การจอง</span><b>{receiptCode(booking.booking_code)}</b></div>
-                <div className="receipt-row"><span>วันที่จอง</span><b>{receiptDate(booking.booking_date)}</b></div>
-                <div className="receipt-row"><span>สถานะการจอง</span><b>{STATUS[booking.status] || "-"}</b></div>
-                <div className="receipt-spacer"></div>
-                <div className="receipt-row"><span>ชื่อลูกค้า</span><b>{booking.customer_name || "-"}</b></div>
-                <div className="receipt-row"><span>เบอร์โทรศัพท์</span><b>{booking.phone || "-"}</b></div>
-                <div className="receipt-row"><span>จำนวนผู้ใหญ่</span><b>{Number(booking.adults || 0)} คน</b></div>
-                <div className="receipt-row"><span>จำนวนเด็ก</span><b>{Number(booking.children || 0)} คน</b></div>
-                <div className="receipt-line">------------------------------------------</div>
-                <div className="receipt-section">รายละเอียดการชำระเงิน</div>
-                <div className="receipt-row"><span>เงินมัดจำ</span><b>{Number(booking.deposit || 0).toLocaleString()} บาท</b></div>
-                <div className="receipt-row"><span>ยอดคงเหลือ</span><b>{Number(booking.remaining || 0).toLocaleString()} บาท</b></div>
-                <div className="receipt-row"><span>รวมทั้งหมด</span><b>{total.toLocaleString()} บาท</b></div>
-                <div className="receipt-line">------------------------------------------</div>
-                <div className="receipt-section">หมายเหตุ</div>
-                <div className="receipt-note">{booking.note || "-"}</div>
-                <div className="receipt-line receipt-bottom-line">------------------------------------------</div>
-                <div className="receipt-thanks-th">ขอบคุณที่ใช้บริการ</div>
-                <div className="receipt-wifi">
-                  <div className="receipt-wifi-title">📶 WiFi aisfibre5G_Khonsan Village</div>
-                  <div className="receipt-wifi-pass">Password: <b>Ksv090868</b></div>
-                </div>
-              </div>
-              <div className="receipt-perforation bottom"></div>
-            </div>
-
-            {message && <div className="error">{message}</div>}
-            <div className="actions">
-              <button className="btn secondary export-hide" onClick={downloadReceipt}>ดาวน์โหลดรูปภาพรายละเอียด</button>
-              <button className="btn secondary" onClick={() => setMode("form")}>แก้ไข</button>
-              <button className="btn secondary" onClick={() => setMode("move")}>ย้ายวัน</button>
-              {booking.status !== "cancelled" && <button className="btn danger" onClick={cancelBooking}>ยกเลิก</button>}
-            </div>
-          </>
-        ) : mode === "move" ? (
-          <>
-            <div className="modal-date">ย้ายการจอง</div>
-            <h2>ย้ายวันจอง</h2>
-            <p className="muted">จากวันที่ <b>{thaiDate(booking.booking_date)}</b></p>
-            <label>เป็นวันที่</label>
-            <input type="date" value={moveDate} onChange={e => setMoveDate(e.target.value)} />
-            {message && <div className="error">{message}</div>}
-            <div className="actions">
-              <button className="btn secondary" onClick={() => setMode("view")}>กลับ</button>
-              <button className="btn primary" disabled={saving} onClick={moveBooking}>{saving ? "กำลังบันทึก…" : "ยืนยันย้ายวัน"}</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="modal-date">{thaiDate(form.booking_date)}</div>
-            <h2>{booking ? "แก้ไขการจอง" : "เพิ่มการจอง"}</h2>
-            <div className="form-grid">
-              <label>วันที่<input type="date" value={form.booking_date || ""} onChange={e => set("booking_date",e.target.value)}/></label>
-              <label>ชื่อ<input value={form.customer_name || ""} onChange={e => set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label>
-              <label>เบอร์โทร<input value={form.phone || ""} onChange={e => set("phone",e.target.value)} placeholder="เบอร์โทร"/></label>
-              <label>รายการอาหาร<select value={form.food || ""} onChange={e => set("food",e.target.value)}><option>ไม่ได้สั่งเพิ่ม</option><option>สั่งอาหารแล้ว</option><option>รอยืนยัน</option></select></label>
-              <label>ผู้ใหญ่<input type="number" min="0" value={form.adults ?? 0} onChange={e => set("adults",e.target.value)}/></label>
-              <label>เด็ก<input type="number" min="0" value={form.children ?? 0} onChange={e => set("children",e.target.value)}/></label>
-              <label>มัดจำ (บาท)<input type="number" min="0" value={form.deposit ?? 0} onChange={e => set("deposit",e.target.value)}/></label>
-              <label>คงเหลือ (บาท)<input type="number" min="0" value={form.remaining ?? 0} onChange={e => set("remaining",e.target.value)}/></label>
-              <label className="full">สถานะ<select value={form.status || "booked"} onChange={e => set("status",e.target.value)}><option value="booked">จองแล้ว</option><option value="waiting_payment">รอชำระเงิน</option><option value="maintenance">ปิดปรับปรุง</option></select></label>
-              <label className="full">หมายเหตุ<textarea rows="4" value={form.note || ""} onChange={e => set("note",e.target.value)} placeholder="รายละเอียดเพิ่มเติม"/></label>
-            </div>
-            {message && <div className="error">{message}</div>}
-            <div className="actions">
-              <button className="btn secondary" onClick={() => booking ? setMode("view") : onClose()}>ยกเลิก</button>
-              <button className="btn primary" disabled={saving || !form.customer_name} onClick={save}>{saving ? "กำลังบันทึก…" : "บันทึก"}</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Row({label,value}) {
-  return <div className="detail-row"><span>{label}</span><b>{value}</b></div>;
-}
+function Row({label,value}){return <div className="detail-row"><span>{label}</span><b>{value}</b></div>}
