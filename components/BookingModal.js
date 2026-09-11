@@ -169,9 +169,6 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
                 <div className="receipt-row"><span>จำนวนผู้ใหญ่</span><b>{Number(booking.adults || 0)} คน</b></div>
                 <div className="receipt-row"><span>จำนวนเด็ก</span><b>{Number(booking.children || 0)} คน</b></div>
                 <div className="receipt-line">------------------------------------------</div>
-                <div className="receipt-section">รายการอาหาร</div>
-                <div className="receipt-row"><span>รายการ</span><b>{booking.food || "-"}</b></div>
-                <div className="receipt-line">------------------------------------------</div>
                 <div className="receipt-section">รายละเอียดการชำระเงิน</div>
                 <div className="receipt-row"><span>เงินมัดจำ</span><b>{Number(booking.deposit || 0).toLocaleString()} บาท</b></div>
                 <div className="receipt-row"><span>ยอดคงเหลือ</span><b>{Number(booking.remaining || 0).toLocaleString()} บาท</b></div>
