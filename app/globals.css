@@ -55,21 +55,25 @@ button{-webkit-tap-highlight-color:transparent}
 .btn.primary{background:#1fa765;color:#fff}.btn.secondary{background:#eef0f2}.btn.danger{background:#ffe7eb;color:#d51545}
 .muted{color:#777}.modal input[type=date]{height:50px;margin:8px 0 15px}
 
-/* Receipt-style export only. This does not change the live booking detail screen. */
-.receipt-export{position:fixed;left:-10000px;top:0;width:390px;background:#fafafa;color:#555;font-family:"Courier New",Consolas,monospace;box-shadow:0 8px 30px #00000012;overflow:hidden}
-.receipt-inner{padding:24px 26px 30px;background:#fafafa}
+.receipt-export{position:fixed;left:-10000px;top:0;width:390px;background:#fafafa;color:#222;font-family:"Noto Sans Thai",Tahoma,Arial,sans-serif;box-shadow:0 8px 30px #00000012;overflow:hidden}
+.receipt-inner{padding:34px 28px 28px;background:#fafafa}
 .receipt-perforation{height:14px;background:radial-gradient(circle at 10px -1px,transparent 8px,#fafafa 8.5px) 0 0/20px 14px repeat-x}
 .receipt-perforation.top{background-color:#fff}
 .receipt-perforation.bottom{transform:rotate(180deg);background-color:#fff}
-.receipt-title{text-align:center;font-family:Arial,sans-serif;font-size:28px;font-weight:800;letter-spacing:1.5px;color:#5c5c5c;margin:4px 0 12px}
-.receipt-line{font-size:16px;line-height:1.35;white-space:pre;overflow:hidden;color:#666;margin:5px 0}
-.receipt-section{font-size:16px;font-weight:800;letter-spacing:.8px;color:#666;margin:10px 0 4px}
-.receipt-row{display:grid;grid-template-columns:82px 1fr;gap:7px;font-size:16px;line-height:1.4;margin:2px 0;word-break:break-word}
-.receipt-row span{color:#777}
-.receipt-row b{font-weight:600;color:#555;word-break:break-word}
-.receipt-note{font-size:16px;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:#555;min-height:22px}
-.receipt-barcode{height:54px;width:78%;margin:18px auto 9px;background:repeating-linear-gradient(90deg,#555 0 2px,transparent 2px 4px,#555 4px 5px,transparent 5px 8px,#555 8px 11px,transparent 11px 13px)}
-.receipt-thanks{text-align:center;font-family:Arial,sans-serif;font-size:18px;font-weight:800;letter-spacing:1.5px;color:#666;margin-top:6px}
+.receipt-title-th{text-align:center;font-size:31px;font-weight:800;color:#111;margin:2px 0 16px;letter-spacing:-.8px}
+.receipt-line{font-size:16px;line-height:1.35;white-space:pre;overflow:hidden;color:#444;margin:6px 0}
+.receipt-spacer{height:12px}
+.receipt-section{font-size:22px;font-weight:800;color:#111;margin:9px 0 5px;line-height:1.25}
+.receipt-row{display:grid;grid-template-columns:118px 1fr;gap:8px;font-size:17px;line-height:1.55;margin:1px 0;word-break:break-word}
+.receipt-row span{color:#222}
+.receipt-row b{font-weight:600;color:#222;word-break:break-word}
+.receipt-note{font-size:17px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:#222;min-height:26px}
+.receipt-bottom-line{margin-top:12px}
+.receipt-thanks-th{text-align:center;font-size:23px;font-weight:800;color:#111;margin:13px 0 12px}
+.receipt-wifi{border:1px solid #d8dce2;border-radius:7px;background:#f1f3f5;padding:9px 12px;text-align:center;font-size:14px;color:#333}
+.receipt-wifi-title{font-weight:700;margin-bottom:4px}
+.receipt-wifi-pass b{font-size:16px;background:#fff;border:1px solid #ddd;border-radius:3px;padding:1px 5px}
+.receipt-barcode,.receipt-thanks{display:none}
 
 @media(max-width:700px){
   html,body{background:#fff;overflow:hidden}
@@ -117,7 +121,6 @@ button{-webkit-tap-highlight-color:transparent}
 .detail-export{background:#fff}
 @media(max-width:700px){.month-picker{width:300px;gap:5px;padding:9px}.month-picker button{padding:7px 3px;font-size:12px}.calendar-download-row{margin-top:6px}.calendar-download-row .btn{padding:9px 14px;font-size:12px}.modal{max-height:92dvh}.detail-export .detail-card{padding:12px 14px}.detail-export .detail-row{padding:11px 0;font-size:15px}.detail-export h2{font-size:24px;margin:5px 0 14px}}
 
-/* Final mobile/export adjustments */
 .day strong{color:#000}
 .detail-export{background:#fff;padding:0}
 @media(max-width:700px){
@@ -148,7 +151,6 @@ button{-webkit-tap-highlight-color:transparent}
   .actions .btn{padding:7px 9px;font-size:12px}
 }
 
-/* Mobile booking form: equal columns, compact layout, and no iOS input zoom */
 .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;align-items:start}
 .form-grid label{min-width:0;width:100%}
 .form-grid input,.form-grid select,.form-grid textarea{width:100%;min-width:0}
@@ -157,7 +159,6 @@ button{-webkit-tap-highlight-color:transparent}
   .modal{overflow:hidden}
   .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px}
   .form-grid label{min-width:0}
-  /* iOS Safari normally zooms focused inputs below 16px. */
   .form-grid input,.form-grid select,.form-grid textarea,.modal>input{font-size:16px;line-height:1.2;min-height:38px;padding:7px 8px}
   .form-grid input[type="date"]{font-size:16px;width:100%;display:block}
   .form-grid textarea{height:44px}
@@ -168,6 +169,5 @@ button{-webkit-tap-highlight-color:transparent}
   .form-grid textarea{height:42px}
 }
 
-/* Give exported images a clean breathing margin without changing the live page. */
 [data-calendar-export]{background:#fff}
 .detail-export{background:#fff}
