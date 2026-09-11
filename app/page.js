@@ -22,7 +22,6 @@ const thaiWeek = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
 function pad(n) { return String(n).padStart(2, "0"); }
 function dateKey(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
 
-// ใช้วันที่ประเทศไทยโดยตรง เพื่อไม่ให้ timezone ของเครื่องทำให้วันคลาดเคลื่อน
 function getThaiToday() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Bangkok",
@@ -56,22 +55,16 @@ export default function Home() {
       const next = getThaiToday();
       const nextKey = dateKey(next.getFullYear(), next.getMonth(), next.getDate());
       setToday(next);
-
       if (nextKey !== previousKey) {
         setViewDate(currentView => {
-          const stillViewingPreviousCurrentMonth =
-            currentView.getFullYear() === previousCurrentYear &&
-            currentView.getMonth() === previousCurrentMonth;
-          return stillViewingPreviousCurrentMonth
-            ? new Date(next.getFullYear(), next.getMonth(), 1)
-            : currentView;
+          const stillViewingPreviousCurrentMonth = currentView.getFullYear() === previousCurrentYear && currentView.getMonth() === previousCurrentMonth;
+          return stillViewingPreviousCurrentMonth ? new Date(next.getFullYear(), next.getMonth(), 1) : currentView;
         });
         previousKey = nextKey;
         previousCurrentYear = next.getFullYear();
         previousCurrentMonth = next.getMonth();
       }
     };
-
     updateToday();
     const timer = setInterval(updateToday, 30000);
     return () => clearInterval(timer);
@@ -126,27 +119,161 @@ export default function Home() {
     const section = calendarRef.current;
     if (!section) return;
     const canvas = await html2canvas(section, {
-      backgroundColor: "#ffffff",
+      backgroundColor: "#fff",
       scale: Math.min(2, Math.max(1.5, window.devicePixelRatio || 1.5)),
       useCORS: true,
+      imageTimeout: 15000,
       onclone: (doc) => {
         const root = doc.querySelector("[data-calendar-export]");
         if (!root) return;
         root.querySelectorAll(".download-calendar-btn, .export-hide").forEach(el => el.style.display = "none");
-        const today = root.querySelector(".today strong");
-        if (today) {
-          today.style.background = "transparent";
-          today.style.color = "#000";
-          today.style.width = "auto";
-          today.style.height = "auto";
-          today.style.display = "block";
-        }
-        root.querySelectorAll(".day strong").forEach(el => el.style.color = "#000");
-        root.style.padding = "12px 12px 16px";
+
+        root.style.position = "relative";
+        root.style.width = "1088px";
+        root.style.height = "1445px";
+        root.style.minHeight = "0";
+        root.style.padding = "0";
+        root.style.margin = "0";
+        root.style.overflow = "hidden";
+        root.style.background = "transparent";
         root.style.boxSizing = "border-box";
-        root.style.background = "#fff";
+
+        const bg = doc.createElement("img");
+        bg.src = "/calendar-bg.svg";
+        bg.className = "calendar-export-background";
+        bg.style.position = "absolute";
+        bg.style.left = "0";
+        bg.style.top = "0";
+        bg.style.width = "1088px";
+        bg.style.height = "1445px";
+        bg.style.zIndex = "0";
+        bg.style.display = "block";
+        root.insertBefore(bg, root.firstChild);
+
+        root.querySelectorAll(":scope > *:not(.calendar-export-background)").forEach(el => {
+          el.style.position = "relative";
+          el.style.zIndex = "2";
+        });
+
+        const monthRow = root.querySelector(".month-row");
+        const weekRow = root.querySelector(".week-row");
+        const grid = root.querySelector(".calendar-grid");
+        if (monthRow) {
+          monthRow.style.position = "absolute";
+          monthRow.style.left = "0";
+          monthRow.style.right = "0";
+          monthRow.style.top = "45px";
+          monthRow.style.height = "105px";
+          monthRow.style.display = "flex";
+          monthRow.style.alignItems = "center";
+          monthRow.style.justifyContent = "center";
+          monthRow.style.zIndex = "3";
+        }
+        root.querySelectorAll(".month-row .circle-btn, .month-row .chev, .month-picker").forEach(el => el.style.display = "none");
+        const title = root.querySelector(".month-title");
+        if (title) {
+          title.style.display = "block";
+          title.style.background = "transparent";
+          title.style.border = "0";
+          title.style.color = "#fff";
+          title.style.fontSize = "68px";
+          title.style.fontWeight = "400";
+          title.style.fontFamily = "cursive";
+          title.style.letterSpacing = "0";
+          title.style.textShadow = "0 2px 3px #0005";
+        }
+        if (weekRow) {
+          weekRow.style.position = "absolute";
+          weekRow.style.left = "130px";
+          weekRow.style.top = "170px";
+          weekRow.style.width = "828px";
+          weekRow.style.margin = "0";
+          weekRow.style.padding = "0";
+          weekRow.style.border = "0";
+          weekRow.style.color = "#fff";
+          weekRow.style.fontSize = "38px";
+          weekRow.style.fontWeight = "400";
+          weekRow.style.textShadow = "0 2px 3px #0007";
+          weekRow.style.zIndex = "3";
+        }
+        if (grid) {
+          grid.style.position = "absolute";
+          grid.style.left = "130px";
+          grid.style.top = "235px";
+          grid.style.width = "828px";
+          grid.style.margin = "0";
+          grid.style.padding = "0";
+          grid.style.display = "grid";
+          grid.style.gridTemplateColumns = "repeat(7,minmax(0,1fr))";
+          grid.style.gap = "4px 4px";
+          grid.style.zIndex = "3";
+        }
+        root.querySelectorAll(".day").forEach(day => {
+          day.style.width = "100%";
+          day.style.height = "92px";
+          day.style.minHeight = "0";
+          day.style.aspectRatio = "auto";
+          day.style.padding = "0";
+          day.style.margin = "0";
+          day.style.border = "0";
+          day.style.borderRadius = "0";
+          day.style.background = "transparent";
+          day.style.color = "#fff";
+          day.style.boxShadow = "none";
+        });
+        root.querySelectorAll(".day.empty").forEach(day => day.style.visibility = "hidden");
+        root.querySelectorAll(".day strong").forEach(num => {
+          num.style.display = "block";
+          num.style.width = "100%";
+          num.style.height = "auto";
+          num.style.margin = "0";
+          num.style.padding = "0";
+          num.style.background = "transparent";
+          num.style.color = "#fff";
+          num.style.fontSize = "46px";
+          num.style.fontWeight = "400";
+          num.style.lineHeight = "1.7";
+          num.style.fontFamily = "cursive";
+          num.style.textAlign = "center";
+          num.style.textShadow = "0 2px 3px #0008";
+        });
+        root.querySelectorAll(".mini-status").forEach(status => {
+          status.style.position = "absolute";
+          status.style.left = "14px";
+          status.style.right = "14px";
+          status.style.bottom = "7px";
+          status.style.background = "transparent";
+          status.style.color = "#fff";
+          status.style.fontSize = "13px";
+          status.style.padding = "0";
+          status.style.textShadow = "0 2px 3px #0008";
+        });
+        root.querySelectorAll(".day.status-booked").forEach(day => {
+          day.style.border = "3px solid #ef233c";
+          day.style.borderRadius = "4px";
+          day.style.background = "transparent";
+          day.style.boxSizing = "border-box";
+        });
+        root.querySelectorAll(".day.status-waiting_payment").forEach(day => {
+          day.style.border = "3px solid #f0a11d";
+          day.style.borderRadius = "4px";
+        });
+        root.querySelectorAll(".day.status-maintenance").forEach(day => {
+          day.style.border = "3px solid #55585d";
+          day.style.borderRadius = "4px";
+        });
+        root.querySelectorAll(".today strong").forEach(num => {
+          num.style.background = "transparent";
+          num.style.color = "#fff";
+          num.style.width = "100%";
+          num.style.height = "auto";
+          num.style.display = "block";
+          num.style.borderRadius = "0";
+        });
+        root.querySelectorAll(".loading, .error").forEach(el => el.style.display = "none");
       }
     });
+
     const fileName = `ปฏิทิน-${thaiMonths[viewDate.getMonth()]}-${viewDate.getFullYear()+543}.png`;
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if (!blob) return;
