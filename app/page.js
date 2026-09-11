@@ -24,6 +24,7 @@ function dateKey(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
 
 export default function Home() {
   const now = new Date();
+  const [today, setToday] = useState(now);
   const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [bookings, setBookings] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -32,6 +33,13 @@ export default function Home() {
   const [error, setError] = useState("");
   const [monthPicker, setMonthPicker] = useState(false);
   const calendarRef = useRef(null);
+
+  useEffect(() => {
+    const updateToday = () => setToday(new Date());
+    updateToday();
+    const timer = setInterval(updateToday, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   async function loadBookings() {
     setLoading(true); setError("");
@@ -108,8 +116,6 @@ export default function Home() {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if (!blob) return;
     const file = new File([blob], fileName, { type: "image/png" });
-    // iPhone/iPad: use the native share sheet so the user can choose
-    // “บันทึกภาพ / Save Image” and put the PNG directly in Photos.
     if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
       try {
         await navigator.share({ files: [file], title: "บันทึกปฏิทิน" });
@@ -157,7 +163,7 @@ export default function Home() {
               const key = dateKey(viewDate.getFullYear(), viewDate.getMonth(), d);
               const active = (byDate[key] || []).find(x => x.status !== "cancelled");
               const status = active?.status;
-              const isToday = key === dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+              const isToday = key === dateKey(today.getFullYear(), today.getMonth(), today.getDate());
               return <button className={`day ${status ? `status-${status}` : ""} ${isToday ? "today" : ""}`} key={key} onClick={() => openDay(d)}>
                 <strong>{d}</strong>{active && <span className="mini-status">{STATUS[status]?.label}</span>}
               </button>;
