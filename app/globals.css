@@ -23,7 +23,7 @@ button{-webkit-tap-highlight-color:transparent}
 .week-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #e4e5e8;padding:0 0 14px;margin-top:20px;font-size:18px;font-weight:800;text-align:center;color:#303238}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin-top:14px}
 .day{width:100%;aspect-ratio:1/1;min-height:0;border:2px solid #e0e1e4;border-radius:22px;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;position:relative;transition:.15s ease}
-.day strong{font-size:28px;line-height:1;font-weight:700;color:#3477df}
+.day strong{font-size:28px;line-height:1;font-weight:700;color:#000}
 .day:hover{border-color:#bfc2c8;transform:translateY(-1px)}
 .day.status-booked{border-color:#df1b50;background:#fff0f3}
 .day.status-waiting_payment{border-color:#eda51f;background:#fff7e8}
@@ -54,6 +54,22 @@ button{-webkit-tap-highlight-color:transparent}
 .btn{border:0;border-radius:13px;padding:13px 22px;font-weight:800;cursor:pointer}
 .btn.primary{background:#1fa765;color:#fff}.btn.secondary{background:#eef0f2}.btn.danger{background:#ffe7eb;color:#d51545}
 .muted{color:#777}.modal input[type=date]{height:50px;margin:8px 0 15px}
+
+/* Receipt-style export only. This does not change the live booking detail screen. */
+.receipt-export{position:fixed;left:-10000px;top:0;width:390px;background:#fafafa;color:#555;font-family:"Courier New",Consolas,monospace;box-shadow:0 8px 30px #00000012;overflow:hidden}
+.receipt-inner{padding:24px 26px 30px;background:#fafafa}
+.receipt-perforation{height:14px;background:radial-gradient(circle at 10px -1px,transparent 8px,#fafafa 8.5px) 0 0/20px 14px repeat-x}
+.receipt-perforation.top{background-color:#fff}
+.receipt-perforation.bottom{transform:rotate(180deg);background-color:#fff}
+.receipt-title{text-align:center;font-family:Arial,sans-serif;font-size:28px;font-weight:800;letter-spacing:1.5px;color:#5c5c5c;margin:4px 0 12px}
+.receipt-line{font-size:16px;line-height:1.35;white-space:pre;overflow:hidden;color:#666;margin:5px 0}
+.receipt-section{font-size:16px;font-weight:800;letter-spacing:.8px;color:#666;margin:10px 0 4px}
+.receipt-row{display:grid;grid-template-columns:82px 1fr;gap:7px;font-size:16px;line-height:1.4;margin:2px 0;word-break:break-word}
+.receipt-row span{color:#777}
+.receipt-row b{font-weight:600;color:#555;word-break:break-word}
+.receipt-note{font-size:16px;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:#555;min-height:22px}
+.receipt-barcode{height:54px;width:78%;margin:18px auto 9px;background:repeating-linear-gradient(90deg,#555 0 2px,transparent 2px 4px,#555 4px 5px,transparent 5px 8px,#555 8px 11px,transparent 11px 13px)}
+.receipt-thanks{text-align:center;font-family:Arial,sans-serif;font-size:18px;font-weight:800;letter-spacing:1.5px;color:#666;margin-top:6px}
 
 @media(max-width:700px){
   html,body{background:#fff;overflow:hidden}
@@ -131,7 +147,6 @@ button{-webkit-tap-highlight-color:transparent}
   .modal h2{font-size:20px;margin-bottom:7px}
   .actions .btn{padding:7px 9px;font-size:12px}
 }
-
 
 /* Mobile booking form: equal columns, compact layout, and no iOS input zoom */
 .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;align-items:start}
