@@ -132,21 +132,69 @@ export default function Home() {
       onclone: (doc) => {
         const root = doc.querySelector("[data-calendar-export]");
         if (!root) return;
-        root.querySelectorAll(".download-calendar-btn, .export-hide").forEach(el => el.style.display = "none");
-        const today = root.querySelector(".today strong");
-        if (today) {
-          today.style.background = "transparent";
-          today.style.color = "#000";
-          today.style.width = "auto";
-          today.style.height = "auto";
-          today.style.display = "block";
+
+        // รูปดาวน์โหลดใช้เฉพาะเดือน + วันในสัปดาห์ + วันที่ ตามแบบที่กำหนด
+        root.querySelectorAll(".circle-btn, .chev, .calendar-download-row, .loading, .error, .mini-status, .month-picker").forEach(el => {
+          el.style.display = "none";
+        });
+
+        const monthTitle = root.querySelector(".month-title");
+        if (monthTitle) {
+          monthTitle.style.cursor = "default";
+          monthTitle.style.fontSize = "34px";
+          monthTitle.style.fontWeight = "800";
+          monthTitle.style.color = "#000";
+          monthTitle.style.padding = "0";
+          monthTitle.style.margin = "0";
         }
-        root.querySelectorAll(".day strong").forEach(el => el.style.color = "#000");
-        root.style.padding = "12px 12px 16px";
+
+        const monthWrap = root.querySelector(".month-picker-wrap");
+        if (monthWrap) {
+          monthWrap.style.display = "flex";
+          monthWrap.style.justifyContent = "center";
+        }
+
+        root.querySelectorAll(".day strong").forEach(el => {
+          el.style.color = "#000";
+          el.style.background = "transparent";
+          el.style.width = "auto";
+          el.style.height = "auto";
+          el.style.display = "block";
+        });
+
+        // ให้รูปออกมากระชับเหมือนภาพตัวอย่าง
+        root.style.padding = "8px 10px 10px";
         root.style.boxSizing = "border-box";
         root.style.background = "#fff";
+        root.style.width = "100%";
+
+        const monthRow = root.querySelector(".month-row");
+        if (monthRow) {
+          monthRow.style.display = "block";
+          monthRow.style.height = "auto";
+          monthRow.style.margin = "0 0 10px";
+        }
+
+        const weekRow = root.querySelector(".week-row");
+        if (weekRow) {
+          weekRow.style.marginTop = "0";
+          weekRow.style.paddingBottom = "8px";
+          weekRow.style.fontSize = "18px";
+        }
+
+        const grid = root.querySelector(".calendar-grid");
+        if (grid) {
+          grid.style.gap = "8px";
+          grid.style.marginTop = "10px";
+        }
+
+        root.querySelectorAll(".day").forEach(el => {
+          el.style.borderRadius = "16px";
+          el.style.padding = "4px";
+        });
       }
     });
+
     const fileName = `ปฏิทิน-${thaiMonths[viewDate.getMonth()]}-${viewDate.getFullYear()+543}.png`;
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if (!blob) return;
