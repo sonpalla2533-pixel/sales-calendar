@@ -17,6 +17,12 @@ function thaiDate(key) {
   return `${d.getDate()} ${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][d.getMonth()]} ${d.getFullYear()+543}`;
 }
 
+function receiptDate(key) {
+  if (!key) return "-";
+  const d = new Date(key + "T00:00:00");
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()+543}`;
+}
+
 export default function BookingModal({ date, booking, onClose, onSaved }) {
   const open = !!date || !!booking;
   const [mode, setMode] = useState(booking ? "view" : "form");
@@ -25,6 +31,7 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const detailRef = useRef(null);
+  const receiptRef = useRef(null);
 
   useEffect(() => {
     setMode(booking ? "view" : "form");
@@ -86,6 +93,36 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
     setSaving(false);
   }
 
+  async function downloadReceipt() {
+    if (!receiptRef.current || !booking) return;
+    const canvas = await html2canvas(receiptRef.current, {
+      backgroundColor: "#fff",
+      scale: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
+      useCORS: true
+    });
+    const fileName = `รายละเอียดการจอง-${booking.customer_name || "ลูกค้า"}.png`;
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) return;
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try {
+        await navigator.share({ files: [file], title: "รายละเอียดการจอง" });
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+
+    const link = document.createElement("a");
+    link.download = fileName;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
 
   return (
@@ -102,24 +139,46 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
                 <div className="detail-top">
                   <span className={`big-status status-${booking.status}`}>{STATUS[booking.status]}</span>
                 </div>
-              <Row label="ชื่อ" value={booking.customer_name}/>
-              <Row label="เบอร์โทร" value={booking.phone || "-"}/>
-              <Row label="รายการอาหาร" value={booking.food || "-"}/>
-              <Row label="ผู้เข้าพัก" value={`ผู้ใหญ่ ${booking.adults} คน, เด็ก ${booking.children} คน`}/>
-              <Row label="มัดจำ" value={`${Number(booking.deposit||0).toLocaleString()} บาท`}/>
-              <Row label="คงเหลือ" value={`${Number(booking.remaining||0).toLocaleString()} บาท`}/>
+                <Row label="ชื่อ" value={booking.customer_name}/>
+                <Row label="เบอร์โทร" value={booking.phone || "-"}/>
+                <Row label="รายการอาหาร" value={booking.food || "-"}/>
+                <Row label="ผู้เข้าพัก" value={`ผู้ใหญ่ ${booking.adults} คน, เด็ก ${booking.children} คน`}/>
+                <Row label="มัดจำ" value={`${Number(booking.deposit||0).toLocaleString()} บาท`}/>
+                <Row label="คงเหลือ" value={`${Number(booking.remaining||0).toLocaleString()} บาท`}/>
                 <Row label="หมายเหตุ" value={booking.note || "-"}/>
               </div>
             </div>
+
+            <div ref={receiptRef} className="receipt-export" aria-hidden="true">
+              <div className="receipt-perforation top"></div>
+              <div className="receipt-inner">
+                <div className="receipt-title">BOOKING RECEIPT</div>
+                <div className="receipt-line">--------------------------------</div>
+                <div className="receipt-row"><span>DATE</span><b>{receiptDate(booking.booking_date)}</b></div>
+                <div className="receipt-row"><span>STATUS</span><b>{STATUS[booking.status] || "-"}</b></div>
+                <div className="receipt-line">--------------------------------</div>
+                <div className="receipt-section">CUSTOMER</div>
+                <div className="receipt-row"><span>NAME</span><b>{booking.customer_name || "-"}</b></div>
+                <div className="receipt-row"><span>PHONE</span><b>{booking.phone || "-"}</b></div>
+                <div className="receipt-line">--------------------------------</div>
+                <div className="receipt-section">BOOKING DETAILS</div>
+                <div className="receipt-row"><span>FOOD</span><b>{booking.food || "-"}</b></div>
+                <div className="receipt-row"><span>GUESTS</span><b>ผู้ใหญ่ {booking.adults || 0} / เด็ก {booking.children || 0}</b></div>
+                <div className="receipt-row"><span>DEPOSIT</span><b>{Number(booking.deposit||0).toLocaleString()} บาท</b></div>
+                <div className="receipt-row"><span>REMAIN</span><b>{Number(booking.remaining||0).toLocaleString()} บาท</b></div>
+                <div className="receipt-line">--------------------------------</div>
+                <div className="receipt-section">NOTE</div>
+                <div className="receipt-note">{booking.note || "-"}</div>
+                <div className="receipt-line">--------------------------------</div>
+                <div className="receipt-barcode"></div>
+                <div className="receipt-thanks">THANK YOU</div>
+              </div>
+              <div className="receipt-perforation bottom"></div>
+            </div>
+
             {message && <div className="error">{message}</div>}
             <div className="actions">
-              <button className="btn secondary export-hide" onClick={async () => {
-                if (!detailRef.current) return;
-                const canvas = await html2canvas(detailRef.current, { backgroundColor: "#fff", scale: 2, useCORS: true });
-                const link = document.createElement("a");
-                link.download = `รายละเอียดการจอง-${booking.customer_name || "ลูกค้า"}.png`;
-                link.href = canvas.toDataURL("image/png"); link.click();
-              }}>ดาวน์โหลดรูปภาพรายละเอียด</button>
+              <button className="btn secondary export-hide" onClick={downloadReceipt}>ดาวน์โหลดรูปภาพรายละเอียด</button>
               <button className="btn secondary" onClick={() => setMode("form")}>แก้ไข</button>
               <button className="btn secondary" onClick={() => setMode("move")}>ย้ายวัน</button>
               {booking.status !== "cancelled" && <button className="btn danger" onClick={cancelBooking}>ยกเลิก</button>}
