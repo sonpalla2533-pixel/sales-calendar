@@ -23,6 +23,11 @@ function receiptDate(key) {
   return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()+543}`;
 }
 
+function receiptCode(code) {
+  if (!code) return "-";
+  return String(code).replace(/^KSV[-\s]*/i, "");
+}
+
 export default function BookingModal({ date, booking, onClose, onSaved }) {
   const open = !!date || !!booking;
   const [mode, setMode] = useState(booking ? "view" : "form");
@@ -124,6 +129,7 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
   }
 
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const total = Number(booking?.deposit || 0) + Number(booking?.remaining || 0);
 
   return (
     <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}>
@@ -152,26 +158,33 @@ export default function BookingModal({ date, booking, onClose, onSaved }) {
             <div ref={receiptRef} className="receipt-export" aria-hidden="true">
               <div className="receipt-perforation top"></div>
               <div className="receipt-inner">
-                <div className="receipt-title">BOOKING RECEIPT</div>
-                <div className="receipt-line">--------------------------------</div>
-                <div className="receipt-row"><span>DATE</span><b>{receiptDate(booking.booking_date)}</b></div>
-                <div className="receipt-row"><span>STATUS</span><b>{STATUS[booking.status] || "-"}</b></div>
-                <div className="receipt-line">--------------------------------</div>
-                <div className="receipt-section">CUSTOMER</div>
-                <div className="receipt-row"><span>NAME</span><b>{booking.customer_name || "-"}</b></div>
-                <div className="receipt-row"><span>PHONE</span><b>{booking.phone || "-"}</b></div>
-                <div className="receipt-line">--------------------------------</div>
-                <div className="receipt-section">BOOKING DETAILS</div>
-                <div className="receipt-row"><span>FOOD</span><b>{booking.food || "-"}</b></div>
-                <div className="receipt-row"><span>GUESTS</span><b>ผู้ใหญ่ {booking.adults || 0} / เด็ก {booking.children || 0}</b></div>
-                <div className="receipt-row"><span>DEPOSIT</span><b>{Number(booking.deposit||0).toLocaleString()} บาท</b></div>
-                <div className="receipt-row"><span>REMAIN</span><b>{Number(booking.remaining||0).toLocaleString()} บาท</b></div>
-                <div className="receipt-line">--------------------------------</div>
-                <div className="receipt-section">NOTE</div>
+                <div className="receipt-title-th">รายละเอียดการจอง</div>
+                <div className="receipt-line">------------------------------------------</div>
+                <div className="receipt-row"><span>เลขที่การจอง</span><b>{receiptCode(booking.booking_code)}</b></div>
+                <div className="receipt-row"><span>วันที่จอง</span><b>{receiptDate(booking.booking_date)}</b></div>
+                <div className="receipt-row"><span>สถานะการจอง</span><b>{STATUS[booking.status] || "-"}</b></div>
+                <div className="receipt-spacer"></div>
+                <div className="receipt-row"><span>ชื่อลูกค้า</span><b>{booking.customer_name || "-"}</b></div>
+                <div className="receipt-row"><span>เบอร์โทรศัพท์</span><b>{booking.phone || "-"}</b></div>
+                <div className="receipt-row"><span>จำนวนผู้ใหญ่</span><b>{Number(booking.adults || 0)} คน</b></div>
+                <div className="receipt-row"><span>จำนวนเด็ก</span><b>{Number(booking.children || 0)} คน</b></div>
+                <div className="receipt-line">------------------------------------------</div>
+                <div className="receipt-section">รายการอาหาร</div>
+                <div className="receipt-row"><span>รายการ</span><b>{booking.food || "-"}</b></div>
+                <div className="receipt-line">------------------------------------------</div>
+                <div className="receipt-section">รายละเอียดการชำระเงิน</div>
+                <div className="receipt-row"><span>เงินมัดจำ</span><b>{Number(booking.deposit || 0).toLocaleString()} บาท</b></div>
+                <div className="receipt-row"><span>ยอดคงเหลือ</span><b>{Number(booking.remaining || 0).toLocaleString()} บาท</b></div>
+                <div className="receipt-row"><span>รวมทั้งหมด</span><b>{total.toLocaleString()} บาท</b></div>
+                <div className="receipt-line">------------------------------------------</div>
+                <div className="receipt-section">หมายเหตุ</div>
                 <div className="receipt-note">{booking.note || "-"}</div>
-                <div className="receipt-line">--------------------------------</div>
-                <div className="receipt-barcode"></div>
-                <div className="receipt-thanks">THANK YOU</div>
+                <div className="receipt-line receipt-bottom-line">------------------------------------------</div>
+                <div className="receipt-thanks-th">ขอบคุณที่ใช้บริการ</div>
+                <div className="receipt-wifi">
+                  <div className="receipt-wifi-title">📶 WiFi aisfibre5G_Khonsan Village</div>
+                  <div className="receipt-wifi-pass">Password: <b>Ksv090868</b></div>
+                </div>
               </div>
               <div className="receipt-perforation bottom"></div>
             </div>
