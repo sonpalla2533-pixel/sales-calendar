@@ -22,10 +22,23 @@ const thaiWeek = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
 function pad(n) { return String(n).padStart(2, "0"); }
 function dateKey(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
 
+// ใช้วันที่ประเทศไทยโดยตรง เพื่อไม่ให้ timezone ของเครื่องทำให้วันคลาดเคลื่อน
+function getThaiToday() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const values = {};
+  parts.forEach(({ type, value }) => { if (type !== "literal") values[type] = value; });
+  return new Date(Number(values.year), Number(values.month) - 1, Number(values.day));
+}
+
 export default function Home() {
-  const now = new Date();
-  const [today, setToday] = useState(now);
-  const [viewDate, setViewDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
+  const initialToday = getThaiToday();
+  const [today, setToday] = useState(initialToday);
+  const [viewDate, setViewDate] = useState(new Date(initialToday.getFullYear(), initialToday.getMonth(), 1));
   const [bookings, setBookings] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -35,11 +48,27 @@ export default function Home() {
   const calendarRef = useRef(null);
 
   useEffect(() => {
-    const updateToday = () => setToday(new Date());
+    let previousKey = dateKey(initialToday.getFullYear(), initialToday.getMonth(), initialToday.getDate());
+
+    const updateToday = () => {
+      const next = getThaiToday();
+      const nextKey = dateKey(next.getFullYear(), next.getMonth(), next.getDate());
+      setToday(next);
+
+      // ถ้ายังเปิดดูเดือนปัจจุบันอยู่ ให้เลื่อนไปเดือนปัจจุบันใหม่เมื่อวันเปลี่ยน
+      const viewingCurrentMonth =
+        viewDate.getFullYear() === initialToday.getFullYear() &&
+        viewDate.getMonth() === initialToday.getMonth();
+      if (nextKey !== previousKey && viewingCurrentMonth) {
+        setViewDate(new Date(next.getFullYear(), next.getMonth(), 1));
+      }
+      previousKey = nextKey;
+    };
+
     updateToday();
-    const timer = setInterval(updateToday, 60000);
+    const timer = setInterval(updateToday, 30000);
     return () => clearInterval(timer);
-  }, []);
+  }, [viewDate, initialToday]);
 
   async function loadBookings() {
     setLoading(true); setError("");
@@ -87,10 +116,11 @@ export default function Home() {
   }
 
   async function downloadCalendar() {
-    if (!calendarRef.current) return;
-    const canvas = await html2canvas(calendarRef.current, {
+    const section = document.querySelector("[data-calendar-export]");
+    if (!section) return;
+    const canvas = await html2canvas(section, {
       backgroundColor: "#ffffff",
-      scale: Math.min(2, window.devicePixelRatio || 1.5),
+      scale: Math.min(2, Math.max(1.5, window.devicePixelRatio || 1.5)),
       useCORS: true,
       onclone: (doc) => {
         const root = doc.querySelector("[data-calendar-export]");
@@ -105,9 +135,7 @@ export default function Home() {
           today.style.display = "block";
         }
         root.querySelectorAll(".day strong").forEach(el => el.style.color = "#000");
-        const title = root.querySelector(".brand h1");
-        if (title) title.style.visibility = "hidden";
-        root.style.padding = "10px";
+        root.style.padding = "12px 12px 16px";
         root.style.boxSizing = "border-box";
         root.style.background = "#fff";
       }
@@ -135,44 +163,42 @@ export default function Home() {
 
   return (
     <main className="app-shell">
-      <div ref={calendarRef} data-calendar-export>
-        <header className="topbar">
-          <div className="brand"><div className="brand-icon">✓</div><h1>ปฏิทินฝ่ายขาย</h1></div>
-          <button className="menu-btn" aria-label="เมนู"><span></span><span></span><span></span></button>
-        </header>
+      <header className="topbar">
+        <div className="brand"><div className="brand-icon">✓</div><h1>ปฏิทินฝ่ายขาย</h1></div>
+        <button className="menu-btn" aria-label="เมนู"><span></span><span></span><span></span></button>
+      </header>
 
-        <section className="calendar-section">
-          <div className="month-row">
-            <button className="circle-btn" onClick={() => moveMonth(-1)}>‹</button>
-            <div className="month-picker-wrap">
-              <button className="month-title" onClick={() => setMonthPicker(v => !v)}>
-                {thaiMonths[viewDate.getMonth()]} {viewDate.getFullYear() + 543} <span className="chev">⌄</span>
-              </button>
-              {monthPicker && <div className="month-picker">
-                {thaiMonths.map((name, i) => <button key={name} className={i === viewDate.getMonth() ? "selected" : ""} onClick={() => chooseMonth(i)}>{name}</button>)}
-              </div>}
-            </div>
-            <button className="circle-btn" onClick={() => moveMonth(1)}>›</button>
+      <section ref={calendarRef} data-calendar-export className="calendar-section">
+        <div className="month-row">
+          <button className="circle-btn" onClick={() => moveMonth(-1)}>‹</button>
+          <div className="month-picker-wrap">
+            <button className="month-title" onClick={() => setMonthPicker(v => !v)}>
+              {thaiMonths[viewDate.getMonth()]} {viewDate.getFullYear() + 543} <span className="chev">⌄</span>
+            </button>
+            {monthPicker && <div className="month-picker">
+              {thaiMonths.map((name, i) => <button key={name} className={i === viewDate.getMonth() ? "selected" : ""} onClick={() => chooseMonth(i)}>{name}</button>)}
+            </div>}
           </div>
+          <button className="circle-btn" onClick={() => moveMonth(1)}>›</button>
+        </div>
 
-          <div className="week-row">{thaiWeek.map(x => <div key={x}>{x}</div>)}</div>
-          {error && <div className="error">เชื่อมต่อฐานข้อมูลไม่ได้: {error}</div>}
-          <div className="calendar-grid">
-            {days.map((d, i) => {
-              if (!d) return <div className="day empty" key={`e-${i}`} />;
-              const key = dateKey(viewDate.getFullYear(), viewDate.getMonth(), d);
-              const active = (byDate[key] || []).find(x => x.status !== "cancelled");
-              const status = active?.status;
-              const isToday = key === dateKey(today.getFullYear(), today.getMonth(), today.getDate());
-              return <button className={`day ${status ? `status-${status}` : ""} ${isToday ? "today" : ""}`} key={key} onClick={() => openDay(d)}>
-                <strong>{d}</strong>{active && <span className="mini-status">{STATUS[status]?.label}</span>}
-              </button>;
-            })}
-          </div>
-          {loading && <div className="loading">กำลังโหลดข้อมูล…</div>}
-          <div className="calendar-download-row export-hide"><button className="btn secondary download-calendar-btn" onClick={downloadCalendar}>ดาวน์โหลดรูปภาพหน้าปฏิทิน</button></div>
-        </section>
-      </div>
+        <div className="week-row">{thaiWeek.map(x => <div key={x}>{x}</div>)}</div>
+        {error && <div className="error">เชื่อมต่อฐานข้อมูลไม่ได้: {error}</div>}
+        <div className="calendar-grid">
+          {days.map((d, i) => {
+            if (!d) return <div className="day empty" key={`e-${i}`} />;
+            const key = dateKey(viewDate.getFullYear(), viewDate.getMonth(), d);
+            const active = (byDate[key] || []).find(x => x.status !== "cancelled");
+            const status = active?.status;
+            const isToday = key === dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+            return <button className={`day ${status ? `status-${status}` : ""} ${isToday ? "today" : ""}`} key={key} onClick={() => openDay(d)}>
+              <strong>{d}</strong>{active && <span className="mini-status">{STATUS[status]?.label}</span>}
+            </button>;
+          })}
+        </div>
+        {loading && <div className="loading">กำลังโหลดข้อมูล…</div>}
+        <div className="calendar-download-row export-hide"><button className="btn secondary download-calendar-btn" onClick={downloadCalendar}>ดาวน์โหลดรูปภาพหน้าปฏิทิน</button></div>
+      </section>
 
       <BookingModal date={selectedDate} booking={selectedBooking}
         onClose={() => { setSelectedDate(null); setSelectedBooking(null); }}
