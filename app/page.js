@@ -49,26 +49,33 @@ export default function Home() {
 
   useEffect(() => {
     let previousKey = dateKey(initialToday.getFullYear(), initialToday.getMonth(), initialToday.getDate());
+    let previousCurrentYear = initialToday.getFullYear();
+    let previousCurrentMonth = initialToday.getMonth();
 
     const updateToday = () => {
       const next = getThaiToday();
       const nextKey = dateKey(next.getFullYear(), next.getMonth(), next.getDate());
       setToday(next);
 
-      // ถ้ายังเปิดดูเดือนปัจจุบันอยู่ ให้เลื่อนไปเดือนปัจจุบันใหม่เมื่อวันเปลี่ยน
-      const viewingCurrentMonth =
-        viewDate.getFullYear() === initialToday.getFullYear() &&
-        viewDate.getMonth() === initialToday.getMonth();
-      if (nextKey !== previousKey && viewingCurrentMonth) {
-        setViewDate(new Date(next.getFullYear(), next.getMonth(), 1));
+      if (nextKey !== previousKey) {
+        setViewDate(currentView => {
+          const stillViewingPreviousCurrentMonth =
+            currentView.getFullYear() === previousCurrentYear &&
+            currentView.getMonth() === previousCurrentMonth;
+          return stillViewingPreviousCurrentMonth
+            ? new Date(next.getFullYear(), next.getMonth(), 1)
+            : currentView;
+        });
+        previousKey = nextKey;
+        previousCurrentYear = next.getFullYear();
+        previousCurrentMonth = next.getMonth();
       }
-      previousKey = nextKey;
     };
 
     updateToday();
     const timer = setInterval(updateToday, 30000);
     return () => clearInterval(timer);
-  }, [viewDate, initialToday]);
+  }, []);
 
   async function loadBookings() {
     setLoading(true); setError("");
@@ -116,7 +123,7 @@ export default function Home() {
   }
 
   async function downloadCalendar() {
-    const section = document.querySelector("[data-calendar-export]");
+    const section = calendarRef.current;
     if (!section) return;
     const canvas = await html2canvas(section, {
       backgroundColor: "#ffffff",
