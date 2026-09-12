@@ -1,4 +1,4 @@
-/* Mobile v7: fixed modal frame + scrollable content + always-visible action buttons */
+/* Mobile v8: reliable iOS/Android modal scrolling */
 @media (max-width:700px){
   .modal-backdrop{
     padding:6px!important;
@@ -6,7 +6,9 @@
     justify-content:center!important;
     overflow:hidden!important;
     overscroll-behavior:none!important;
+    touch-action:none!important;
   }
+
   .modal{
     width:min(100%,520px)!important;
     max-width:520px!important;
@@ -14,24 +16,29 @@
     max-height:calc(100dvh - 12px)!important;
     min-height:0!important;
     overflow:hidden!important;
-    display:flex!important;
-    flex-direction:column!important;
+    display:grid!important;
+    grid-template-rows:auto auto minmax(0,1fr) auto!important;
     padding:10px 10px 8px!important;
     border-radius:17px!important;
+    touch-action:pan-y!important;
   }
-  .close-btn{width:34px!important;height:34px!important;right:7px!important;top:7px!important;font-size:25px!important;z-index:5}
-  .modal-date{font-size:11px!important;line-height:1.05!important;margin:0 0 1px!important;padding-right:38px!important;flex:0 0 auto!important}
-  .modal h2{font-size:18px!important;line-height:1.05!important;margin:1px 0 5px!important;flex:0 0 auto!important}
 
-  /* The actual content area scrolls; header and buttons stay visible. */
+  .close-btn{width:34px!important;height:34px!important;right:7px!important;top:7px!important;font-size:25px!important;z-index:5}
+  .modal-date{font-size:11px!important;line-height:1.05!important;margin:0 0 1px!important;padding-right:38px!important}
+  .modal h2{font-size:18px!important;line-height:1.05!important;margin:1px 0 5px!important}
+
+  /* This row is the only scrollable region. Grid gives it a real bounded height on iOS. */
   .form-grid,.detail-export{
     min-height:0!important;
-    flex:1 1 auto!important;
-    overflow-y:auto!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-y:scroll!important;
     overflow-x:hidden!important;
     -webkit-overflow-scrolling:touch!important;
     overscroll-behavior:contain!important;
+    touch-action:pan-y!important;
     padding-right:2px!important;
+    scrollbar-width:thin!important;
   }
   .detail-export{padding:0 2px 0 0!important}
 
@@ -59,7 +66,7 @@
   .remaining-box b{font-size:13px!important}
   .error{font-size:10px!important;margin:3px 0!important;padding:4px 6px!important;flex:0 0 auto!important}
 
-  /* Action bar is always visible at the bottom. */
+  /* Buttons remain outside the scroll area and stay visible. */
   .actions{
     flex:0 0 auto!important;
     gap:4px!important;
@@ -71,6 +78,7 @@
     background:#fff!important;
     z-index:4!important;
     border-top:1px solid #eee!important;
+    touch-action:manipulation!important;
   }
   .actions .btn{min-height:32px!important;height:32px!important;padding:3px 5px!important;font-size:11px!important;border-radius:8px!important;white-space:nowrap!important}
 
