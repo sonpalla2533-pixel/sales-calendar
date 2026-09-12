@@ -1,17 +1,45 @@
-/* Mobile v6: keep booking form and booking details compact enough for one phone screen. */
+/* Mobile v7: fixed modal frame + scrollable content + always-visible action buttons */
 @media (max-width:700px){
-  .modal-backdrop{padding:4px!important;align-items:center!important;overflow:hidden!important}
-  .modal{width:100%!important;max-width:520px!important;max-height:calc(100dvh - 8px)!important;height:auto!important;overflow:hidden!important;padding:9px 10px 8px!important;border-radius:16px!important}
-  .modal-date{font-size:11px!important;line-height:1!important;margin-bottom:1px!important;padding-right:34px!important}
-  .modal h2{font-size:18px!important;line-height:1.05!important;margin:1px 0 5px!important}
-  .close-btn{width:30px!important;height:30px!important;right:6px!important;top:6px!important;font-size:22px!important}
+  .modal-backdrop{
+    padding:6px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+  .modal{
+    width:min(100%,520px)!important;
+    max-width:520px!important;
+    height:calc(100dvh - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+    padding:10px 10px 8px!important;
+    border-radius:17px!important;
+  }
+  .close-btn{width:34px!important;height:34px!important;right:7px!important;top:7px!important;font-size:25px!important;z-index:5}
+  .modal-date{font-size:11px!important;line-height:1.05!important;margin:0 0 1px!important;padding-right:38px!important;flex:0 0 auto!important}
+  .modal h2{font-size:18px!important;line-height:1.05!important;margin:1px 0 5px!important;flex:0 0 auto!important}
+
+  /* The actual content area scrolls; header and buttons stay visible. */
+  .form-grid,.detail-export{
+    min-height:0!important;
+    flex:1 1 auto!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior:contain!important;
+    padding-right:2px!important;
+  }
+  .detail-export{padding:0 2px 0 0!important}
 
   /* Booking form */
-  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px 6px!important}
+  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px 6px!important;align-content:start!important}
   .form-grid .full{grid-column:1/-1!important}
   .form-grid label{font-size:10px!important;line-height:1!important;gap:2px!important}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{min-height:30px!important;height:30px!important;padding:4px 6px!important;border-radius:7px!important;font-size:15px!important;line-height:1.05!important}
-  .form-grid input[type=date]{height:30px!important;min-height:30px!important}
+  .form-grid input,.form-grid select,.form-grid textarea,.single-label input{min-height:30px!important;height:30px!important;padding:4px 6px!important;border-radius:7px!important;font-size:15px!important;line-height:1.05!important}
   .form-grid textarea{height:34px!important;min-height:34px!important;resize:none!important}
   .choice-grid{gap:5px!important;margin-top:2px!important}
   .choice-card{height:36px!important;min-height:36px!important;padding:3px 6px!important;border-radius:8px!important;font-size:11px!important;line-height:1!important}
@@ -29,16 +57,28 @@
   .totals .grand{font-size:13px!important;margin-top:1px!important;padding-top:3px!important}
   .remaining-box{min-height:30px!important;height:30px!important;padding:4px 7px!important;border-radius:7px!important;font-size:10px!important}
   .remaining-box b{font-size:13px!important}
-  .error{font-size:10px!important;margin:3px 0!important;padding:4px 6px!important}
-  .actions{gap:4px!important;margin-top:5px!important;display:grid!important;grid-template-columns:1fr 1fr!important;position:static!important;padding:0!important;background:transparent!important}
-  .actions .btn{min-height:31px!important;height:31px!important;padding:3px 5px!important;font-size:11px!important;border-radius:8px!important;white-space:nowrap!important}
+  .error{font-size:10px!important;margin:3px 0!important;padding:4px 6px!important;flex:0 0 auto!important}
+
+  /* Action bar is always visible at the bottom. */
+  .actions{
+    flex:0 0 auto!important;
+    gap:4px!important;
+    margin:5px 0 0!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    position:relative!important;
+    padding:5px 0 0!important;
+    background:#fff!important;
+    z-index:4!important;
+    border-top:1px solid #eee!important;
+  }
+  .actions .btn{min-height:32px!important;height:32px!important;padding:3px 5px!important;font-size:11px!important;border-radius:8px!important;white-space:nowrap!important}
 
   /* Booking detail */
-  .detail-export{padding:0!important}
   .detail-card{padding:5px 7px!important;border-radius:9px!important}
   .detail-top{padding-bottom:4px!important}
   .big-status{padding:3px 9px!important;border-radius:15px!important;font-size:11px!important}
-  .detail-row{grid-template-columns:92px minmax(0,1fr)!important;gap:5px!important;padding:3px 0!important;font-size:11px!important;line-height:1.15!important}
+  .detail-row{grid-template-columns:88px minmax(0,1fr)!important;gap:5px!important;padding:3px 0!important;font-size:11px!important;line-height:1.15!important}
   .detail-row span,.detail-row b{min-width:0!important;overflow-wrap:anywhere!important}
   .detail-section-title{padding:4px 0 2px!important;font-size:11px!important;line-height:1.1!important}
   .checkout-note{font-size:.72em!important}
@@ -49,15 +89,14 @@
 }
 
 @media (max-width:380px){
-  .modal{padding:8px 8px 7px!important;border-radius:14px!important}
+  .modal{height:calc(100dvh - 10px)!important;max-height:calc(100dvh - 10px)!important;padding:8px 8px 7px!important;border-radius:15px!important}
   .form-grid{gap:3px 5px!important}
-  .form-grid input,.form-grid select,.form-grid textarea,.modal>input{height:28px!important;min-height:28px!important;padding:3px 5px!important;font-size:14px!important}
-  .form-grid input[type=date]{height:28px!important;min-height:28px!important}
+  .form-grid input,.form-grid select,.form-grid textarea,.single-label input{height:28px!important;min-height:28px!important;padding:3px 5px!important;font-size:14px!important}
   .form-grid textarea{height:31px!important;min-height:31px!important}
   .choice-card{height:34px!important;min-height:34px!important;font-size:10px!important}
   .choice-card small{font-size:7px!important}
   .detail-card{padding:4px 6px!important}
-  .detail-row{grid-template-columns:86px minmax(0,1fr)!important;font-size:10px!important;padding:2.5px 0!important}
+  .detail-row{grid-template-columns:82px minmax(0,1fr)!important;font-size:10px!important;padding:2.5px 0!important}
   .detail-section-title{font-size:10px!important;padding:3px 0 2px!important}
   .modal .detail-export ~ .actions .btn{font-size:9px!important}
   .modal .detail-export ~ .actions .btn:first-child::after{font-size:9px!important}
