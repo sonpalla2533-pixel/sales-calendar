@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./mobile-fit.css";
 
 export const metadata = {
   title: "ปฏิทินฝ่ายขาย",
