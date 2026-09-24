@@ -121,23 +121,42 @@ export default function BookingModal({date,booking,onClose,onSaved}){
 
   async function moveBooking(){
     if(!moveDate)return;
-    const b=normalizeBooking(booking); const stay=nightsBetween(b.check_in,b.check_out); const newOut=addDays(moveDate,stay);
-    const meta={check_in:moveDate,check_out:newOut,booking_type:b.booking_type,food_items:b.food_items,extra_items:b.extra_items};
+    const b=normalizeBooking(booking);
+    const stay=nightsBetween(b.check_in,b.check_out);
+    const newOut=addDays(moveDate,stay);
+    const meta={check_in:moveDate,check_out:newOut,booking_type:b.booking_type,food_items:b.food_items||[],extra_items:b.extra_items||[]};
+
+    // ย้ายเฉพาะข้อมูลที่จำเป็นต่อการย้ายวัน เพื่อไม่เขียนทับข้อมูลเดิมของลูกค้า
     const payload={
       booking_date:moveDate,
-      customer_name:b.customer_name||"",
-      phone:b.phone||"",
       food:`${META_FOOD}${JSON.stringify(meta)}`,
-      adults:Number(b.adults||0),
-      children:Number(b.children||0),
-      note:storedNote(b.note,meta),
-      status:b.status||"booked",
-      deposit:Number(b.deposit||0),
-      remaining:Number(b.remaining||0)
+      note:storedNote(b.note,meta)
     };
-    setSaving(true);setMessage("");
-    const {error}=await supabase.from("bookings").update(payload).eq("id",booking.id);
-    if(error)setMessage(error.message);else onSaved(moveDate);setSaving(false);
+
+    setSaving(true);
+    setMessage("");
+
+    const result=await supabase
+      .from("bookings")
+      .update(payload)
+      .eq("id",booking.id)
+      .select("*")
+      .maybeSingle();
+
+    if(result.error){
+      setMessage(`ย้ายวันไม่สำเร็จ: ${result.error.message}`);
+      setSaving(false);
+      return;
+    }
+
+    if(!result.data){
+      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบข้อมูลการจองหลังบันทึก กรุณาลองอีกครั้ง");
+      setSaving(false);
+      return;
+    }
+
+    onSaved(moveDate);
+    setSaving(false);
   }
 
   async function cancelBooking(){
@@ -166,6 +185,7 @@ export default function BookingModal({date,booking,onClose,onSaved}){
     const row=(label,value,big=false)=>`<div style="display:grid;grid-template-columns:135px 1fr;gap:14px;padding:9px 0;border-bottom:1px solid #e5e7eb;font-size:${big?18:16}px;line-height:1.4"><span style="color:#666;font-weight:700">${label}</span><b>${value}</b></div>`;
     const foodHtml=foods.length?foods.map(x=>row("อาหาร",`${x.name} ${money(x.price)} บาท`)).join(""):row("รายการอาหาร","ไม่ได้สั่งเพิ่ม");
     const extraHtml=extras.length?extras.map(x=>row("ค่าใช้จ่ายเพิ่ม",`${x.name} ${money(x.price)} บาท`)).join(""):"";
+    const grandText=money(grand);
     el.innerHTML=`<div style="text-align:center;font-size:27px;font-weight:800;margin-bottom:6px">รายละเอียดการจอง</div>
       <div style="text-align:center;margin-bottom:14px"><span style="display:inline-block;background:#fff0f4;color:#c91e4c;padding:7px 15px;border-radius:20px;font-weight:800">${STATUS[detail.status]||"-"}</span></div>
       <div style="border-top:1px solid #e5e7eb">
@@ -180,7 +200,7 @@ export default function BookingModal({date,booking,onClose,onSaved}){
       ${foodHtml}${extraHtml}
       ${row("มัดจำ",`${money(detail.deposit)} บาท`)}
       ${row("คงเหลือ",`${money(remain)} บาท`)}
-      ${row("รวมทั้งหมด",`${money(grand)} บาท`,true)}
+      ${row("รวมทั้งหมด",`${grandText} บาท`,true)}
       ${row("หมายเหตุ",detail.note||"-")}
       </div>
       <div style="text-align:center;font-weight:800;font-size:17px;padding:16px 0 10px">ขอบคุณที่ใช้บริการ</div>
@@ -223,7 +243,7 @@ export default function BookingModal({date,booking,onClose,onSaved}){
         <div className="modal-date">{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</div><h2>{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</h2>
         <div className="form-grid">
           <label>วันเช็คอิน<input type="date" value={form.check_in||""} onChange={e=>set("check_in",e.target.value)}/></label><label>วันเช็คเอาท์<input type="date" value={form.check_out||""} onChange={e=>set("check_out",e.target.value)}/></label>
-          <label>ชื่อผู้จอง<input value={form.customer_name||""} onChange={e=>set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label><label>เบอร์โทรศัพท์<input value={form.phone||""} onChange={e=>set("phone",e.target.value)} placeholder="เบอร์โทร"/></label>
+          <label>ชื่อผู้จอง<input value={form.customer_name||""} onChange={e=>set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label><label>เบอร์โทรศัพท์<input value={form.phone||""} onChange={e=>set("phone",e.target.value)} placeholder="เบอร์โทร"/>
           <div className="full"><label>ประเภทการจอง</label><div className="choice-grid"><button type="button" className={`choice-card ${form.booking_type==="room"?"active":""}`} onClick={()=>set("booking_type","room")}>1 ห้อง<br/><small>{money(ROOM_PRICE)} บาท/คืน</small></button><button type="button" className={`choice-card ${form.booking_type==="house"?"active":""}`} onClick={()=>set("booking_type","house")}>เหมาหลัง<br/><small>{money(HOUSE_PRICE)} บาท/คืน</small></button></div></div>
           <label>ผู้ใหญ่<input type="number" min="0" value={form.adults??0} onChange={e=>set("adults",e.target.value)}/></label><label>เด็ก<input type="number" min="0" value={form.children??0} onChange={e=>set("children",e.target.value)}/></label>
           <div className="full expandable"><button type="button" className="expand-btn" onClick={()=>setFoodOpen(v=>!v)}>+ เพิ่มอาหาร</button>{foodOpen&&<div className="item-editor"><div className="item-add"><input value={foodDraft.name} onChange={e=>setFoodDraft({...foodDraft,name:e.target.value})} placeholder="เช่น หมูกระทะ"/><input type="number" min="0" value={foodDraft.price} onChange={e=>setFoodDraft({...foodDraft,price:e.target.value})} placeholder="ราคา"/><button type="button" onClick={addFood}>เพิ่ม</button></div>{(form.food_items||[]).map((x,i)=><div className="item-line" key={i}><span>{x.name}</span><b>{money(x.price)} บาท</b><button type="button" onClick={()=>removeItem("food_items",i)}>×</button></div>)}</div>}</div>
