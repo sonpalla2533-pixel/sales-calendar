@@ -28,7 +28,7 @@ export default function Home(){
   setLoading(true);setError("");
   const start=new Date(targetViewDate.getFullYear(),targetViewDate.getMonth(),1); const end=new Date(targetViewDate.getFullYear(),targetViewDate.getMonth()+1,0);
   const from=addDays(dateKey(start.getFullYear(),start.getMonth(),start.getDate()),-62); const to=addDays(dateKey(end.getFullYear(),end.getMonth(),end.getDate()),1);
-  const {data,error}=await supabase.from("bookings").select("*").gte("booking_date",from).lte("booking_date",to).order("created_at",{ascending:false});
+  const {data,error}=await supabase.from("bookings").select("*").order("created_at",{ascending:false});
   if(seq!==loadSeq.current)return; if(error){setError(error.message);setBookings([])}else setBookings((data||[]).map(parseBooking)); setLoading(false);
  }
  useEffect(()=>{loadBookings()},[viewDate]);
