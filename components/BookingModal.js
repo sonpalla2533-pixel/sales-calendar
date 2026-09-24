@@ -136,26 +136,43 @@ export default function BookingModal({date,booking,onClose,onSaved}){
     setSaving(true);
     setMessage("");
 
-    const result=await supabase
+    // แยก UPDATE กับ SELECT ออกจากกัน และตรวจสอบว่าวันที่ในฐานข้อมูลเปลี่ยนจริง
+    const updateResult=await supabase
       .from("bookings")
       .update(payload)
-      .eq("id",booking.id)
+      .eq("id",booking.id);
+
+    if(updateResult.error){
+      setMessage(`ย้ายวันไม่สำเร็จ: ${updateResult.error.message}`);
+      setSaving(false);
+      return;
+    }
+
+    const verifyResult=await supabase
+      .from("bookings")
       .select("*")
+      .eq("id",booking.id)
       .maybeSingle();
 
-    if(result.error){
-      setMessage(`ย้ายวันไม่สำเร็จ: ${result.error.message}`);
+    if(verifyResult.error){
+      setMessage(`บันทึกแล้วแต่ตรวจสอบข้อมูลไม่ได้: ${verifyResult.error.message}`);
       setSaving(false);
       return;
     }
 
-    if(!result.data){
-      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบข้อมูลการจองหลังบันทึก กรุณาลองอีกครั้ง");
+    if(!verifyResult.data){
+      setMessage("บันทึกแล้วแต่ไม่พบข้อมูลการจอง กรุณาลองอีกครั้ง");
       setSaving(false);
       return;
     }
 
-    onSaved(moveDate);
+    if(verifyResult.data.booking_date!==moveDate){
+      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${verifyResult.data.booking_date || "-"}`);
+      setSaving(false);
+      return;
+    }
+
+    onSaved(moveDate,verifyResult.data);
     setSaving(false);
   }
 
