@@ -123,9 +123,21 @@ export default function BookingModal({date,booking,onClose,onSaved}){
     if(!moveDate)return;
     const b=normalizeBooking(booking); const stay=nightsBetween(b.check_in,b.check_out); const newOut=addDays(moveDate,stay);
     const meta={check_in:moveDate,check_out:newOut,booking_type:b.booking_type,food_items:b.food_items,extra_items:b.extra_items};
+    const payload={
+      booking_date:moveDate,
+      customer_name:b.customer_name||"",
+      phone:b.phone||"",
+      food:`${META_FOOD}${JSON.stringify(meta)}`,
+      adults:Number(b.adults||0),
+      children:Number(b.children||0),
+      note:storedNote(b.note,meta),
+      status:b.status||"booked",
+      deposit:Number(b.deposit||0),
+      remaining:Number(b.remaining||0)
+    };
     setSaving(true);setMessage("");
-    const {error}=await supabase.from("bookings").update({booking_date:moveDate,note:storedNote(b.note,meta)}).eq("id",booking.id);
-    if(error)setMessage(error.message);else onSaved();setSaving(false);
+    const {error}=await supabase.from("bookings").update(payload).eq("id",booking.id);
+    if(error)setMessage(error.message);else onSaved(moveDate);setSaving(false);
   }
 
   async function cancelBooking(){
