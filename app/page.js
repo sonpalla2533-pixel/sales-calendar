@@ -22,7 +22,7 @@ function inStay(b,key){const start=b.check_in||b.booking_date,end=b.check_out||a
 export default function Home(){
  const [today,setToday]=useState(getThaiToday());
  const [viewDate,setViewDate]=useState(()=>{const t=new Date(getThaiToday()+"T00:00:00");return new Date(t.getFullYear(),t.getMonth(),1)});
- const [bookings,setBookings]=useState([]),[selectedDate,setSelectedDate]=useState(null),[selectedBooking,setSelectedBooking]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[monthPicker,setMonthPicker]=useState(false); const calendarRef=useRef(null); const loadSeq=useRef(0);
+ const [bookings,setBookings]=useState([]),[selectedDate,setSelectedDate]=useState(null),[selectedBooking,setSelectedBooking]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[monthPicker,setMonthPicker]=useState(false); const calendarRef=useRef(null); const loadSeq=useRef(0); const viewDateRef=useRef(viewDate); viewDateRef.current=viewDate;
  async function loadBookings(targetViewDate=viewDate){
   const seq=++loadSeq.current;
   setLoading(true);setError("");
@@ -32,7 +32,7 @@ export default function Home(){
   if(seq!==loadSeq.current)return; if(error){setError(error.message);setBookings([])}else setBookings((data||[]).map(parseBooking)); setLoading(false);
  }
  useEffect(()=>{loadBookings()},[viewDate]);
- useEffect(()=>{const c=supabase.channel("bookings-live").on("postgres_changes",{event:"*",schema:"public",table:"bookings"},loadBookings).subscribe();return()=>supabase.removeChannel(c)},[viewDate]);
+ useEffect(()=>{const c=supabase.channel("bookings-live").on("postgres_changes",{event:"*",schema:"public",table:"bookings"},()=>loadBookings(viewDateRef.current)).subscribe();return()=>supabase.removeChannel(c)},[]);
  useEffect(()=>{const t=setInterval(()=>setToday(getThaiToday()),30000);return()=>clearInterval(t)},[]);
  const days=useMemo(()=>{const y=viewDate.getFullYear(),m=viewDate.getMonth(),first=new Date(y,m,1).getDay(),count=new Date(y,m+1,0).getDate();const a=[];for(let i=0;i<first;i++)a.push(null);for(let d=1;d<=count;d++)a.push(d);return a},[viewDate]);
  const byDate=useMemo(()=>{const map={};for(const b of bookings){if(b.status==="cancelled")continue;const start=b.check_in||b.booking_date,end=b.check_out||addDays(start,1);let d=new Date(start+"T00:00:00"),last=new Date(end+"T00:00:00");while(d<last){const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;(map[k] ||= []).push(b);d.setDate(d.getDate()+1)}}return map},[bookings]);
