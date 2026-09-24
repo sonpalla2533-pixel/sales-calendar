@@ -24,7 +24,7 @@ function addDays(key,n){
   const d=new Date(key+"T00:00:00"); d.setDate(d.getDate()+Number(n||0));
   return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0,10);
 }
-function nightsBetween(a,b){ if(!a||!b) return 1; return Math.max(1, Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/86400000)); }
+function nightsBetween(a,b){ if(!isValidDateKey(a)||!isValidDateKey(b)) return 1; const start=new Date(a+"T00:00:00"); const end=new Date(b+"T00:00:00"); const nights=Math.round((end-start)/86400000); return Math.max(1,nights); }
 function receiptCode(code){ return code ? String(code).replace(/^KSV[-\s]*/i,"") : "-"; }
 function parseFoodData(value){
   const raw=String(value||"");
