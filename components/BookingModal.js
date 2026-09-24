@@ -24,7 +24,13 @@ function addDays(key,n){
   const d=new Date(key+"T00:00:00"); d.setDate(d.getDate()+Number(n||0));
   return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0,10);
 }
-function nightsBetween(a,b){ if(!isValidDateKey(a)||!isValidDateKey(b)) return 1; const start=new Date(a+"T00:00:00"); const end=new Date(b+"T00:00:00"); const nights=Math.round((end-start)/86400000); return Math.max(1,nights); }
+function nightsBetween(a,b){
+  if(!isValidDateKey(a)||!isValidDateKey(b)) return 1;
+  const start=new Date(a+"T00:00:00");
+  const end=new Date(b+"T00:00:00");
+  const nights=Math.round((end-start)/86400000);
+  return Math.max(1,nights);
+}
 function receiptCode(code){ return code ? String(code).replace(/^KSV[-\s]*/i,"") : "-"; }
 function parseFoodData(value){
   const raw=String(value||"");
@@ -120,7 +126,14 @@ export default function BookingModal({date,booking,onClose,onSaved}){
   }
 
   async function moveBooking(){
-    if(!moveDate)return;
+    if(!booking?.id){
+      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบรหัสรายการจอง");
+      return;
+    }
+    if(!isValidDateKey(moveDate)){
+      setMessage("กรุณาเลือกวันที่ต้องการย้าย");
+      return;
+    }
 
     setSaving(true);
     setMessage("");
@@ -138,36 +151,50 @@ export default function BookingModal({date,booking,onClose,onSaved}){
       extra_items:b.extra_items||[]
     };
 
-    const result = await supabase
+    // แยกการ UPDATE ออกจากการ SELECT เพื่อไม่ให้การย้ายวัน
+    // ล้มเหลวเพราะการขอข้อมูลแถวกลับมาพร้อมกัน
+    const updateResult = await supabase
       .from("bookings")
       .update({
         booking_date:newCheckIn,
         food:META_FOOD+JSON.stringify(meta),
         note:storedNote(b.note,meta)
       })
-      .eq("id",booking.id)
+      .eq("id",booking.id);
+
+    if(updateResult.error){
+      setMessage(`ย้ายวันไม่สำเร็จ: ${updateResult.error.message}`);
+      setSaving(false);
+      return;
+    }
+
+    // อ่านแถวที่เพิ่งแก้กลับมา เพื่อให้ปฏิทินใช้ข้อมูลจากฐานข้อมูลจริง
+    const fetchResult = await supabase
+      .from("bookings")
       .select("*")
+      .eq("id",booking.id)
       .maybeSingle();
 
-    if(result.error){
-      setMessage(`ย้ายวันไม่สำเร็จ: ${result.error.message}`);
+    if(fetchResult.error){
+      setMessage(`ย้ายวันสำเร็จแต่โหลดข้อมูลใหม่ไม่ได้: ${fetchResult.error.message}`);
       setSaving(false);
       return;
     }
 
-    if(!result.data){
-      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบรายการเดิมหลังบันทึก กรุณาลองอีกครั้ง");
+    if(!fetchResult.data){
+      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบรายการจองหลังบันทึก");
       setSaving(false);
       return;
     }
 
-    if(result.data.booking_date!==newCheckIn){
-      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${result.data.booking_date}`);
+    const saved=normalizeBooking(fetchResult.data);
+    if(saved.check_in!==newCheckIn || fetchResult.data.booking_date!==newCheckIn){
+      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${fetchResult.data.booking_date || "-"}`);
       setSaving(false);
       return;
     }
 
-    onSaved(newCheckIn,result.data);
+    onSaved(newCheckIn,fetchResult.data);
     setSaving(false);
   }
 
@@ -255,7 +282,8 @@ export default function BookingModal({date,booking,onClose,onSaved}){
         <div className="modal-date">{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</div><h2>{booking?"แก้ไขการจอง":"เพิ่มการจอง"}</h2>
         <div className="form-grid">
           <label>วันเช็คอิน<input type="date" value={form.check_in||""} onChange={e=>set("check_in",e.target.value)}/></label><label>วันเช็คเอาท์<input type="date" value={form.check_out||""} onChange={e=>set("check_out",e.target.value)}/></label>
-          <label>ชื่อผู้จอง<input value={form.customer_name||""} onChange={e=>set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label><label>เบอร์โทรศัพท์<input value={form.phone||""} onChange={e=>set("phone",e.target.value)} placeholder="เบอร์โทร"/></label>
+          <label>ชื่อผู้จอง<input value={form.customer_name||""} onChange={e=>set("customer_name",e.target.value)} placeholder="ชื่อลูกค้า"/></label><label>เบอร์โทรศัพท์<input value={form.phone||""} onChange={e=>set("phone",e.target.value)} placeholder="เบอร์โทร"/>
+          </label>
           <div className="full"><label>ประเภทการจอง</label><div className="choice-grid"><button type="button" className={`choice-card ${form.booking_type==="room"?"active":""}`} onClick={()=>set("booking_type","room")}>1 ห้อง<br/><small>{money(ROOM_PRICE)} บาท/คืน</small></button><button type="button" className={`choice-card ${form.booking_type==="house"?"active":""}`} onClick={()=>set("booking_type","house")}>เหมาหลัง<br/><small>{money(HOUSE_PRICE)} บาท/คืน</small></button></div></div>
           <label>ผู้ใหญ่<input type="number" min="0" value={form.adults??0} onChange={e=>set("adults",e.target.value)}/></label><label>เด็ก<input type="number" min="0" value={form.children??0} onChange={e=>set("children",e.target.value)}/></label>
           <div className="full expandable"><button type="button" className="expand-btn" onClick={()=>setFoodOpen(v=>!v)}>+ เพิ่มอาหาร</button>{foodOpen&&<div className="item-editor"><div className="item-add"><input value={foodDraft.name} onChange={e=>setFoodDraft({...foodDraft,name:e.target.value})} placeholder="เช่น หมูกระทะ"/><input type="number" min="0" value={foodDraft.price} onChange={e=>setFoodDraft({...foodDraft,price:e.target.value})} placeholder="ราคา"/><button type="button" onClick={addFood}>เพิ่ม</button></div>{(form.food_items||[]).map((x,i)=><div className="item-line" key={i}><span>{x.name}</span><b>{money(x.price)} บาท</b><button type="button" onClick={()=>removeItem("food_items",i)}>×</button></div>)}</div>}</div>
