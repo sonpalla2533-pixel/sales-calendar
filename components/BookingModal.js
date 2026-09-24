@@ -138,22 +138,36 @@ export default function BookingModal({date,booking,onClose,onSaved}){
       extra_items:b.extra_items||[]
     };
 
-    const { error } = await supabase
+    const result = await supabase
       .from("bookings")
       .update({
         booking_date:newCheckIn,
         food:META_FOOD+JSON.stringify(meta),
         note:storedNote(b.note,meta)
       })
-      .eq("id",booking.id);
+      .eq("id",booking.id)
+      .select("*")
+      .maybeSingle();
 
-    if(error){
-      setMessage(`ย้ายวันไม่สำเร็จ: ${error.message}`);
+    if(result.error){
+      setMessage(`ย้ายวันไม่สำเร็จ: ${result.error.message}`);
       setSaving(false);
       return;
     }
 
-    onSaved(newCheckIn);
+    if(!result.data){
+      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบรายการเดิมหลังบันทึก กรุณาลองอีกครั้ง");
+      setSaving(false);
+      return;
+    }
+
+    if(result.data.booking_date!==newCheckIn){
+      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${result.data.booking_date}`);
+      setSaving(false);
+      return;
+    }
+
+    onSaved(newCheckIn,result.data);
     setSaving(false);
   }
 
