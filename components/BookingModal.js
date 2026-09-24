@@ -126,25 +126,26 @@ export default function BookingModal({date,booking,onClose,onSaved}){
     setMessage("");
 
     const b=normalizeBooking(booking);
-    const stay=nightsBetween(b.check_in,b.check_out);
-    const newOut=addDays(moveDate,stay);
+    const nights=nightsBetween(b.check_in,b.check_out);
+    const newCheckIn=moveDate;
+    const newCheckOut=addDays(newCheckIn,nights);
+
     const meta={
-      check_in:moveDate,
-      check_out:newOut,
+      check_in:newCheckIn,
+      check_out:newCheckOut,
       booking_type:b.booking_type,
       food_items:b.food_items||[],
       extra_items:b.extra_items||[]
     };
 
-    // ใช้รายการเดิม และเลื่อนวันของข้อมูลที่ใช้แสดงผลให้ตรงกันทั้งหมด
     const { error } = await supabase
       .from("bookings")
       .update({
-        booking_date:moveDate,
+        booking_date:newCheckIn,
         food:META_FOOD+JSON.stringify(meta),
         note:storedNote(b.note,meta)
       })
-      .eq("id", booking.id);
+      .eq("id",booking.id);
 
     if(error){
       setMessage(`ย้ายวันไม่สำเร็จ: ${error.message}`);
@@ -152,7 +153,7 @@ export default function BookingModal({date,booking,onClose,onSaved}){
       return;
     }
 
-    onSaved(moveDate);
+    onSaved(newCheckIn);
     setSaving(false);
   }
 
