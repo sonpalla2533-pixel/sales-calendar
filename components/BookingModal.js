@@ -121,58 +121,23 @@ export default function BookingModal({date,booking,onClose,onSaved}){
 
   async function moveBooking(){
     if(!moveDate)return;
-    const b=normalizeBooking(booking);
-    const stay=nightsBetween(b.check_in,b.check_out);
-    const newOut=addDays(moveDate,stay);
-    const meta={check_in:moveDate,check_out:newOut,booking_type:b.booking_type,food_items:b.food_items||[],extra_items:b.extra_items||[]};
-
-    // ย้ายเฉพาะข้อมูลที่จำเป็นต่อการย้ายวัน เพื่อไม่เขียนทับข้อมูลเดิมของลูกค้า
-    const payload={
-      booking_date:moveDate,
-      food:`${META_FOOD}${JSON.stringify(meta)}`,
-      note:storedNote(b.note,meta)
-    };
 
     setSaving(true);
     setMessage("");
 
-    // แยก UPDATE กับ SELECT ออกจากกัน และตรวจสอบว่าวันที่ในฐานข้อมูลเปลี่ยนจริง
-    const updateResult=await supabase
+    // ย้ายวันของรายการเดิมเท่านั้น: เปลี่ยน booking_date อย่างเดียว
+    const { error } = await supabase
       .from("bookings")
-      .update(payload)
-      .eq("id",booking.id);
+      .update({ booking_date: moveDate })
+      .eq("id", booking.id);
 
-    if(updateResult.error){
-      setMessage(`ย้ายวันไม่สำเร็จ: ${updateResult.error.message}`);
+    if(error){
+      setMessage(`ย้ายวันไม่สำเร็จ: ${error.message}`);
       setSaving(false);
       return;
     }
 
-    const verifyResult=await supabase
-      .from("bookings")
-      .select("*")
-      .eq("id",booking.id)
-      .maybeSingle();
-
-    if(verifyResult.error){
-      setMessage(`บันทึกแล้วแต่ตรวจสอบข้อมูลไม่ได้: ${verifyResult.error.message}`);
-      setSaving(false);
-      return;
-    }
-
-    if(!verifyResult.data){
-      setMessage("บันทึกแล้วแต่ไม่พบข้อมูลการจอง กรุณาลองอีกครั้ง");
-      setSaving(false);
-      return;
-    }
-
-    if(verifyResult.data.booking_date!==moveDate){
-      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${verifyResult.data.booking_date || "-"}`);
-      setSaving(false);
-      return;
-    }
-
-    onSaved(moveDate,verifyResult.data);
+    onSaved(moveDate);
     setSaving(false);
   }
 
