@@ -336,3 +336,10 @@ button{-webkit-tap-highlight-color:transparent}
 /* Softer, friendlier typography for downloaded booking images */
 .detail-export,
 .detail-export *{font-family:"Kanit","Noto Sans Thai",Tahoma,Arial,sans-serif!important}
+
+
+/* Home button in the calendar header */
+.brand-icon.home-btn{border:0;padding:0;cursor:pointer;flex:0 0 auto;display:grid;place-items:center;color:#1fa765}
+.brand-icon.home-btn svg{width:58%;height:58%;display:block}
+.brand-icon.home-btn:focus-visible{outline:3px solid #1fa765;outline-offset:3px}
+@media(max-width:700px){.brand-icon.home-btn svg{width:60%;height:60%}}
