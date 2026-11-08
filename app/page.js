@@ -11,7 +11,7 @@ const META_PREFIX="__SC_META__", META_NOTE="__SC_NOTE__", META_FOOD="__SC_DATA__
 function pad(n){return String(n).padStart(2,"0")}
 function dateKey(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
 function isValidDateKey(key){return typeof key==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(key)&&!Number.isNaN(new Date(key+"T00:00:00").getTime())}
-function addDays(key,n){if(!isValidDateKey(key))return "";const d=new Date(key+"T00:00:00");d.setDate(d.getDate()+Number(n||0));return Number.isNaN(d.getTime())?"":d.toISOString().slice(0,10)}
+function addDays(key,n){if(!isValidDateKey(key))return "";const d=new Date(key+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+Number(n||0));return Number.isNaN(d.getTime())?"":d.toISOString().slice(0,10)}
 function getThaiToday(){const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const v={};p.forEach(x=>{if(x.type!=="literal")v[x.type]=x.value});return `${v.year}-${v.month}-${v.day}`}
 function legacyFoodItems(value){const raw=String(value||"");if(!raw||raw==="ไม่ได้สั่งเพิ่ม")return [];return raw.split(/\s*,\s*/).map(part=>{const m=part.match(/^(.+?)\s+([\d,]+)\s*บาท$/);return m?{name:m[1].trim(),price:Number(m[2].replace(/,/g,""))}:null}).filter(Boolean)}
 function parseFoodData(value){const raw=String(value||"");if(!raw.startsWith(META_FOOD))return {meta:{},legacy:legacyFoodItems(value)};try{const meta=JSON.parse(raw.slice(META_FOOD.length).trim());return {meta:meta||{},legacy:Array.isArray(meta?.food_items)?meta.food_items:[]}}catch{return {meta:{},legacy:[]}}}
