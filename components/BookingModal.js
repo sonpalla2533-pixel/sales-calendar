@@ -138,64 +138,99 @@ export default function BookingModal({date,booking,onClose,onSaved}){
     setSaving(true);
     setMessage("");
 
-    const b=normalizeBooking(booking);
-    const nights=nightsBetween(b.check_in,b.check_out);
-    const newCheckIn=moveDate;
-    const newCheckOut=addDays(newCheckIn,nights);
+    try {
+      const b=normalizeBooking(booking);
+      const nights=nightsBetween(b.check_in,b.check_out);
+      const newCheckIn=moveDate;
+      const newCheckOut=addDays(newCheckIn,nights);
 
-    const meta={
-      check_in:newCheckIn,
-      check_out:newCheckOut,
-      booking_type:b.booking_type,
-      food_items:b.food_items||[],
-      extra_items:b.extra_items||[]
-    };
+      if(!isValidDateKey(newCheckOut) || newCheckOut<=newCheckIn){
+        setMessage("วันเช็คเอาท์ใหม่ไม่ถูกต้อง");
+        setSaving(false);
+        return;
+      }
 
-    // แยกการ UPDATE ออกจากการ SELECT เพื่อไม่ให้การย้ายวัน
-    // ล้มเหลวเพราะการขอข้อมูลแถวกลับมาพร้อมกัน
-    const updateResult = await supabase
-      .from("bookings")
-      .update({
-        booking_date:newCheckIn,
-        food:META_FOOD+JSON.stringify(meta),
-        note:storedNote(b.note,meta)
-      })
-      .eq("id",booking.id);
+      // ตรวจสอบช่วงวันที่กับรายการอื่นก่อนเขียนฐานข้อมูล
+      const listResult=await supabase.from("bookings").select("*");
+      if(listResult.error){
+        setMessage(`ตรวจสอบวันว่างไม่สำเร็จ: ${listResult.error.message}`);
+        setSaving(false);
+        return;
+      }
 
-    if(updateResult.error){
-      setMessage(`ย้ายวันไม่สำเร็จ: ${updateResult.error.message}`);
+      const conflict=(listResult.data||[])
+        .filter(row=>row.id!==booking.id && row.status!=="cancelled")
+        .map(normalizeBooking)
+        .find(other=>{
+          const otherStart=other.check_in||other.booking_date;
+          const otherEnd=other.check_out||addDays(otherStart,1);
+          return isValidDateKey(otherStart) &&
+            isValidDateKey(otherEnd) &&
+            otherStart<newCheckOut &&
+            otherEnd>newCheckIn;
+        });
+
+      if(conflict){
+        setMessage(`ย้ายไม่ได้: ช่วงวันที่ ${thaiDate(conflict.check_in||conflict.booking_date)} - ${thaiDate(conflict.check_out||addDays(conflict.check_in||conflict.booking_date,1))} มีรายการอยู่แล้ว`);
+        setSaving(false);
+        return;
+      }
+
+      // เก็บ metadata เดิมทั้งหมด แล้วเปลี่ยนเฉพาะวันเข้าพัก/วันออก
+      const foodMeta=parseFoodData(booking.food).meta||{};
+      const noteMeta=parseStoredNote(booking.note).meta||{};
+      const meta={
+        ...foodMeta,
+        ...noteMeta,
+        check_in:newCheckIn,
+        check_out:newCheckOut,
+        booking_type:b.booking_type,
+        food_items:b.food_items||[],
+        extra_items:b.extra_items||[]
+      };
+
+      const updateResult=await supabase
+        .from("bookings")
+        .update({
+          booking_date:newCheckIn,
+          food:META_FOOD+JSON.stringify(meta),
+          note:storedNote(b.note,meta)
+        })
+        .eq("id",booking.id);
+
+      if(updateResult.error){
+        setMessage(`ย้ายวันไม่สำเร็จ: ${updateResult.error.message}`);
+        setSaving(false);
+        return;
+      }
+
+      const fetchResult=await supabase
+        .from("bookings")
+        .select("*")
+        .eq("id",booking.id)
+        .maybeSingle();
+
+      if(fetchResult.error || !fetchResult.data){
+        setMessage(fetchResult.error
+          ? `ย้ายวันแล้ว แต่โหลดข้อมูลล่าสุดไม่สำเร็จ: ${fetchResult.error.message}`
+          : "ย้ายวันแล้ว แต่ไม่พบข้อมูลล่าสุด กรุณารีเฟรชปฏิทิน");
+        setSaving(false);
+        return;
+      }
+
+      const saved=normalizeBooking(fetchResult.data);
+      if(saved.check_in!==newCheckIn || saved.check_out!==newCheckOut || fetchResult.data.booking_date!==newCheckIn){
+        setMessage("ตรวจสอบหลังบันทึกแล้วพบว่าวันที่ไม่ตรง กรุณาตรวจสอบรายการนี้ก่อนทำรายการต่อ");
+        setSaving(false);
+        return;
+      }
+
+      onSaved(newCheckIn,fetchResult.data);
+    } catch(err) {
+      setMessage(`ย้ายวันไม่สำเร็จ: ${err?.message||"เกิดข้อผิดพลาด"}`);
+    } finally {
       setSaving(false);
-      return;
     }
-
-    // อ่านแถวที่เพิ่งแก้กลับมา เพื่อให้ปฏิทินใช้ข้อมูลจากฐานข้อมูลจริง
-    const fetchResult = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("id",booking.id)
-      .maybeSingle();
-
-    if(fetchResult.error){
-      setMessage(`ย้ายวันสำเร็จแต่โหลดข้อมูลใหม่ไม่ได้: ${fetchResult.error.message}`);
-      setSaving(false);
-      return;
-    }
-
-    if(!fetchResult.data){
-      setMessage("ย้ายวันไม่สำเร็จ: ไม่พบรายการจองหลังบันทึก");
-      setSaving(false);
-      return;
-    }
-
-    const saved=normalizeBooking(fetchResult.data);
-    if(saved.check_in!==newCheckIn || fetchResult.data.booking_date!==newCheckIn){
-      setMessage(`ย้ายวันไม่สำเร็จ: ฐานข้อมูลยังเป็นวันที่ ${fetchResult.data.booking_date || "-"}`);
-      setSaving(false);
-      return;
-    }
-
-    onSaved(newCheckIn,fetchResult.data);
-    setSaving(false);
   }
 
   async function cancelBooking(){
