@@ -19,11 +19,7 @@ function thaiDate(key){
   const m = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
   return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()+543}`;
 }
-function addDays(key,n){
-  if(!isValidDateKey(key)) return "";
-  const d=new Date(key+"T00:00:00"); d.setDate(d.getDate()+Number(n||0));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0,10);
-}
+function addDays(key,n){if(!isValidDateKey(key))return "";const d=new Date(key+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+Number(n||0));return Number.isNaN(d.getTime())?"":d.toISOString().slice(0,10)}
 function nightsBetween(a,b){
   if(!isValidDateKey(a)||!isValidDateKey(b)) return 1;
   const start=new Date(a+"T00:00:00");
