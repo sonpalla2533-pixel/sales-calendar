@@ -349,3 +349,9 @@ button{-webkit-tap-highlight-color:transparent}
 .month-row{display:flex;justify-content:center;align-items:center;gap:0}
 .month-picker-wrap{width:100%;justify-content:center}
 .month-title{color:#000!important}
+
+
+/* Buddhist Era year selector in the calendar month picker */
+.month-picker.year-picker{grid-template-columns:repeat(3,minmax(0,1fr));max-height:min(55dvh,420px);overflow-y:auto;overscroll-behavior:contain}
+.month-picker.year-picker button{white-space:nowrap}
+@media(max-width:700px){.month-picker.year-picker{width:min(320px,92vw);grid-template-columns:repeat(3,minmax(0,1fr));max-height:55dvh}.month-picker.year-picker button{font-size:12px;padding:8px 3px}}
