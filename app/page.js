@@ -53,7 +53,17 @@ export default function Home(){
  }
  useEffect(()=>{loadBookings()},[viewDate]);
 
- useEffect(()=>{\n  // Sync the calendar to Thailand local date after hydration so the today marker\n  // never starts from a stale/server-rendered date.\n  const syncToday=()=>setToday(getThaiToday());\n  const current=getThaiToday();\n  const [year,month]=current.split("-").map(Number);\n  setToday(current);\n  setViewDate(new Date(year,month-1,1));\n  const t=setInterval(syncToday,30000);\n  return()=>clearInterval(t);\n },[]);
+ useEffect(()=>{
+  // Sync the calendar to Thailand local date after hydration so the today marker
+  // never starts from a stale/server-rendered date.
+  const syncToday=()=>setToday(getThaiToday());
+  const current=getThaiToday();
+  const [year,month]=current.split("-").map(Number);
+  setToday(current);
+  setViewDate(new Date(year,month-1,1));
+  const t=setInterval(syncToday,30000);
+  return()=>clearInterval(t);
+ },[]);
  const days=useMemo(()=>{const y=viewDate.getFullYear(),m=viewDate.getMonth(),first=new Date(y,m,1).getDay(),count=new Date(y,m+1,0).getDate();const a=[];for(let i=0;i<first;i++)a.push(null);for(let d=1;d<=count;d++)a.push(d);return a},[viewDate]);
  const byDate=useMemo(()=>{const map={};for(const b of bookings){if(b.status==="cancelled")continue;let start=b.check_in||b.booking_date,end=b.check_out||addDays(start,1);if(!isValidDateKey(start))start=b.booking_date;if(!isValidDateKey(end)||end<=start)end=addDays(start,1);let d=new Date(start+"T00:00:00"),last=new Date(end+"T00:00:00");while(d<last){const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;(map[k] ||= []).push(b);d.setDate(d.getDate()+1)}}return map},[bookings]);
  function openDay(d){if(!d)return;const k=dateKey(viewDate.getFullYear(),viewDate.getMonth(),d);const active=(byDate[k]||[])[0];if(active)setSelectedBooking(active);else setSelectedDate(k)}
