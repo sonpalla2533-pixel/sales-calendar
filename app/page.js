@@ -19,8 +19,8 @@ function parseBooking(b){const raw=String(b.note||"");const fd=parseFoodData(b.f
 function inStay(b,key){const start=b.check_in||b.booking_date,end=b.check_out||addDays(start,1);return isValidDateKey(start)&&isValidDateKey(end)&&start<=key&&key<end}
 
 export default function Home(){
- const [today,setToday]=useState("");
- const [viewDate,setViewDate]=useState(()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),1)});
+ const [today,setToday]=useState(()=>getThaiToday());
+ const [viewDate,setViewDate]=useState(()=>{const [year,month]=getThaiToday().split("-").map(Number);return new Date(year,month-1,1)});
  const [bookings,setBookings]=useState([]),[selectedDate,setSelectedDate]=useState(null),[selectedBooking,setSelectedBooking]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[monthPicker,setMonthPicker]=useState(false); const loadSeq=useRef(0); const viewDateRef=useRef(viewDate); viewDateRef.current=viewDate;
  const touchStart=useRef(null), suppressSwipeClick=useRef(false);
  function handleCalendarTouchStart(e){
