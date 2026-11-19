@@ -19,8 +19,8 @@ function parseBooking(b){const raw=String(b.note||"");const fd=parseFoodData(b.f
 function inStay(b,key){const start=b.check_in||b.booking_date,end=b.check_out||addDays(start,1);return isValidDateKey(start)&&isValidDateKey(end)&&start<=key&&key<end}
 
 export default function Home(){
- const [today,setToday]=useState(getThaiToday());
- const [viewDate,setViewDate]=useState(()=>{const t=new Date(getThaiToday()+"T00:00:00");return new Date(t.getFullYear(),t.getMonth(),1)});
+ const [today,setToday]=useState("");
+ const [viewDate,setViewDate]=useState(()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),1)});
  const [bookings,setBookings]=useState([]),[selectedDate,setSelectedDate]=useState(null),[selectedBooking,setSelectedBooking]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[monthPicker,setMonthPicker]=useState(false); const loadSeq=useRef(0); const viewDateRef=useRef(viewDate); viewDateRef.current=viewDate;
  const touchStart=useRef(null), suppressSwipeClick=useRef(false);
  function handleCalendarTouchStart(e){
@@ -53,7 +53,7 @@ export default function Home(){
  }
  useEffect(()=>{loadBookings()},[viewDate]);
 
- useEffect(()=>{const t=setInterval(()=>setToday(getThaiToday()),30000);return()=>clearInterval(t)},[]);
+ useEffect(()=>{\n  // Sync the calendar to Thailand local date after hydration so the today marker\n  // never starts from a stale/server-rendered date.\n  const syncToday=()=>setToday(getThaiToday());\n  const current=getThaiToday();\n  const [year,month]=current.split("-").map(Number);\n  setToday(current);\n  setViewDate(new Date(year,month-1,1));\n  const t=setInterval(syncToday,30000);\n  return()=>clearInterval(t);\n },[]);
  const days=useMemo(()=>{const y=viewDate.getFullYear(),m=viewDate.getMonth(),first=new Date(y,m,1).getDay(),count=new Date(y,m+1,0).getDate();const a=[];for(let i=0;i<first;i++)a.push(null);for(let d=1;d<=count;d++)a.push(d);return a},[viewDate]);
  const byDate=useMemo(()=>{const map={};for(const b of bookings){if(b.status==="cancelled")continue;let start=b.check_in||b.booking_date,end=b.check_out||addDays(start,1);if(!isValidDateKey(start))start=b.booking_date;if(!isValidDateKey(end)||end<=start)end=addDays(start,1);let d=new Date(start+"T00:00:00"),last=new Date(end+"T00:00:00");while(d<last){const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;(map[k] ||= []).push(b);d.setDate(d.getDate()+1)}}return map},[bookings]);
  function openDay(d){if(!d)return;const k=dateKey(viewDate.getFullYear(),viewDate.getMonth(),d);const active=(byDate[k]||[])[0];if(active)setSelectedBooking(active);else setSelectedDate(k)}
