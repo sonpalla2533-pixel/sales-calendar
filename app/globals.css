@@ -28,7 +28,7 @@ button{-webkit-tap-highlight-color:transparent}
 .day.status-booked{border-color:#df1b50;background:#fff0f3}
 .day.status-waiting_payment{border-color:#eda51f;background:#fff7e8}
 .day.status-maintenance{border-color:#55585d;background:#f0f1f2}
-.day.today strong{background:#df2850;color:#fff;border-radius:50%;width:52px;height:52px;display:grid;place-items:center}
+.day.today{border:2px solid #f59e0b !important;outline:2px solid #f59e0b;outline-offset:-2px}.day.today strong{background:transparent;color:inherit;border-radius:0;width:auto;height:auto;display:block}
 .mini-status{position:absolute;bottom:5px;left:3px;right:3px;margin:0;text-align:center;font-size:11px;line-height:1.1;background:#f1f2f4;border-radius:10px;padding:3px 2px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .day.empty{border-color:transparent;background:transparent;cursor:default}
 .day.empty:hover{transform:none}
